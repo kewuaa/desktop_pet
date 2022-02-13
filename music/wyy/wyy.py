@@ -2,15 +2,29 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 13:30:14
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-13 21:47:07
+# @Last Modified time: 2022-02-13 22:49:31
+if __name__ == '__main__':
+    import sys
+    sys.path.append('..')
+    sys.path.append('../..')
+
 import os
 import asyncio
 
 from hzy import fake_ua
-from ..model import SongInfo
-from ..model import BaseMusicer
-from .js_code import wyy_js
-from .cookie import cookie
+try:
+    from model import SongInfo
+    from model import BaseMusicer
+except ImportError:
+    from ..model import SongInfo
+    from ..model import BaseMusicer
+try:
+    from js_code import wyy_js
+    from cookie import cookie
+except ImportError:
+    from .js_code import wyy_js
+    from .cookie import cookie
+    
 
 
 current_path, _ = os.path.split(os.path.realpath(__file__))

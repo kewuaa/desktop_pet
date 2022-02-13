@@ -2,13 +2,13 @@
 # @Author: kewuaa
 # @Date:   2022-01-15 08:58:38
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-13 21:56:46
-# from pprint import pprint
+# @Last Modified time: 2022-02-13 22:53:09
+if __name__ == '__main__':
+    import sys
+    sys.path.append('..')
+
 from collections import deque
 import os
-import sys
-if __name__ == '__main__':
-    sys.path.append('..')
 import json
 import re
 import base64
@@ -25,14 +25,15 @@ from PySide2.QtGui import QPixmap
 from PySide2.QtGui import QIcon
 from qasync import QEventLoop
 
+
 from hzy import fake_ua
 from hzy.aiofile import aiofile
 try:
-    from .ui_translate import Ui_MainWindow
-    from .js_code import sign_js
-except ImportError:
     from ui_translate import Ui_MainWindow
     from js_code import sign_js
+except ImportError:
+    from .ui_translate import Ui_MainWindow
+    from .js_code import sign_js
 
 
 current_path, _ = os.path.split(os.path.realpath(__file__))

@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-01-14 13:00:02
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-09 12:30:55
+# @Last Modified time: 2022-02-13 22:24:54
 import base64
 import asyncio
 import random
@@ -113,7 +113,7 @@ class Pet(QWidget):
         trans_action = QAction(
             '百度翻译', parent=self, triggered=self.trans_app.show)
         music_action = QAction(
-            '网易云', parent=self, triggered=self.music_app.show)
+            'music', parent=self, triggered=self.music_app.show)
         music_action.setIcon(self.music_app.ui.window_icon)
         action_bat = QAction(
             '导出bat脚本文件', parent=self, triggered=self.get_bat_file())

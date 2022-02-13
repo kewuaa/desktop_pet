@@ -2,7 +2,12 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 16:17:25
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-13 21:47:49
+# @Last Modified time: 2022-02-13 22:50:37
+if __name__ == '__main__':
+    import sys
+    sys.path.append('..')
+    sys.path.append('../..')
+
 from urllib.parse import quote
 import os
 import re
@@ -10,12 +15,20 @@ import time
 import json
 import asyncio
 
-
 from hzy import fake_ua
-from ..model import SongInfo
-from ..model import BaseMusicer
-from .cookie import cookie
-from .js_code import kg_js
+try:
+    from model import SongInfo
+    from model import BaseMusicer
+except ImportError:
+    from ..model import SongInfo
+    from ..model import BaseMusicer
+try:
+    from cookie import cookie
+    from js_code import kg_js
+except ImportError:
+    from .cookie import cookie
+    from .js_code import kg_js
+    
 
 
 current_path, _ = os.path.split(os.path.realpath(__file__))

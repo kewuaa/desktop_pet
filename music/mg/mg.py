@@ -2,9 +2,13 @@
 # @Author: kewuaa
 # @Date:   2022-02-07 00:40:21
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-13 21:48:34
+# @Last Modified time: 2022-02-13 22:51:27
+if __name__ == '__main__':
+    import sys
+    sys.path.append('..')
+    sys.path.append('../..')
+
 from urllib.parse import quote
-from yarl import URL
 import os
 import json
 import time
@@ -12,16 +16,30 @@ import hashlib
 import asyncio
 
 from lxml.html import fromstring
+from yarl import URL
+
 
 from hzy import fake_ua
 from hzy.aiofile.aiofile import AsyncFuncWrapper
-from ..model import BaseMusicer
-from ..model import SongInfo
-from ..model import CookieInvalidError
-from ..AES import encrypt
-from ..RSA import RSA
-from .cookie import cookie
-from .setting import *
+try:
+    from model import BaseMusicer
+    from model import SongInfo
+    from model import CookieInvalidError
+    from AES import encrypt
+    from RSA import RSA
+except ImportError:
+    from ..AES import encrypt
+    from ..RSA import RSA
+    from ..model import BaseMusicer
+    from ..model import SongInfo
+    from ..model import CookieInvalidError
+try:
+    from cookie import cookie
+    from setting import *
+except ImportError:
+    from .cookie import cookie
+    from .setting import *
+    
 
 
 current_path, _ = os.path.split(os.path.realpath(__file__))
