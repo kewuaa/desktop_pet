@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-01-21 18:36:13
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-13 22:52:18
+# @Last Modified time: 2022-02-13 23:02:45
 if __name__ == '__main__':
     import sys
     sys.path.append('..')
@@ -509,7 +509,7 @@ class MusicApp(object):
 
     async def _get_mediacontent(self, _id):
         if os.path.exists(
-                path := os.path.join(self.DOWNLOAD_PATH, f'{_id}.m4a')):
+                path := os.path.join(self.DOWNLOAD_PATH, f'{"_".join(_id)}.m4a')):
             mediacontent = QMediaContent(QUrl.fromLocalFile(path))
         else:
             url = await self._get_url(_id)
