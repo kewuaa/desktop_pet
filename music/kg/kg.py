@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 16:17:25
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-13 23:03:25
+# @Last Modified time: 2022-02-14 21:32:07
 if __name__ == '__main__':
     import sys
     sys.path.append('..')
@@ -13,6 +13,7 @@ import os
 import re
 import time
 import json
+import hashlib
 import asyncio
 
 from hzy import fake_ua
@@ -24,11 +25,8 @@ except ImportError:
     from ..model import BaseMusicer
 try:
     from cookie import cookie
-    from js_code import kg_js
 except ImportError:
     from .cookie import cookie
-    from .js_code import kg_js
-    
 
 
 current_path, _ = os.path.split(os.path.realpath(__file__))
@@ -45,20 +43,18 @@ class Musicer(BaseMusicer):
         'cookie': cookie,
         'referer': 'https://www.kugou.com/',
     }
-    CMD = 'node {path} {encseckey}'
     STR = 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwtbitrate=0callback=callback123clienttime={time}clientver=2000dfid=-inputtype=0iscorrection=1isfuzzy=0keyword={song}mid={time}page=1pagesize=30platform=WebFilterprivilege_filter=0srcappid=2919tag=emtoken=1d8ad00b0dedb733bed729be875518669c98f5ab075e95cf334daffb9b39491buserid=943077582uuid={time}NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt'
 
     def __init__(self):
-        super(Musicer, self).__init__(
-            js=kg_js, current_path=current_path, name=__name__)
+        super(Musicer, self).__init__(current_path=current_path)
         self.match = re.compile('.*?\(([\\s\\S]*)\)')
         self._id_map = {}
 
     async def _get_song_info(self, song):
         self.HEADERS['user-agent'] = ua.get_ua()
         time_stamp = int(time.time() * 1000)
-        signature = await self._get_params(
-            self.STR.format(time=time_stamp, song=song))
+        signature = hashlib.md5(
+            self.STR.format(time=time_stamp, song=song).encode()).hexdigest().upper()
         res = await self.session.get(
             self.SEARCH_URL.format(
                 time=time_stamp, song=quote(song), signature=signature),
@@ -97,13 +93,3 @@ class Musicer(BaseMusicer):
     async def _get_song_url(self, _id):
         assert (url := self._id_map.get(str(_id))) is not None, 'VIP或无版权歌曲，无法播放与下载'
         return url
-
-    async def _get_params(self, encseckey):
-        proc = await asyncio.create_subprocess_shell(
-            self.CMD.format(path=self.js_path, encseckey=encseckey),
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE)
-        stdout, stderr = await proc.communicate()
-        assert not stderr, f'subprocess error: {stderr.decode("gbk")}'
-        result = stdout.decode('utf-8').strip()
-        return result

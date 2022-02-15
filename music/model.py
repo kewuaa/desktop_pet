@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-11 15:15:54
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-13 21:01:40
+# @Last Modified time: 2022-02-15 11:11:15
 from collections import namedtuple
 from http.cookies import SimpleCookie
 import os
@@ -27,12 +27,12 @@ class BaseMusicer(object):
     """basic of all musicer."""
 
     def __init__(
-            self, *, js=None, current_path: str, name: str = None):
+            self, *, js: str = None, current_path: str):
         super(BaseMusicer, self).__init__()
         self.sess = ClientSession()
         self.current_path = current_path
-        if js is not None and name is not None:
-            asyncio.create_task(self._load_js(js, name))
+        if js is not None:
+            self.load_js = self._load_js(js)
 
     def load_login_args(self, *login_args):
         assert len(login_args) == 2, '登录参数格式不正确'
@@ -52,15 +52,17 @@ class BaseMusicer(object):
             self.sess = ClientSession()
         return self.sess
 
-    async def _load_js(self, js, name):
-        if not os.path.exists(
-                path := os.path.join(self.current_path, f'{name.split(".")[-1]}.js')):
-            async with aiofile.open_async(
-                    path, 'w') as f:
-                b64content = js.encode()
-                content = base64.b64decode(b64content)
-                await f.write(content.decode())
-        self.js_path = path
+    def _load_js(self, js):
+        async def load_js(name):
+            if not os.path.exists(
+                    path := os.path.join(self.current_path, f'{name}.js')):
+                async with aiofile.open_async(
+                        path, 'w') as f:
+                    b64content = js.encode()
+                    content = base64.b64decode(b64content)
+                    await f.write(content.decode())
+            self.js_path = path
+        return load_js
 
     async def _get_song_info(self, song):
         pass
