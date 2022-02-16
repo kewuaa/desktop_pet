@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 16:17:25
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-14 21:32:07
+# @Last Modified time: 2022-02-15 16:25:45
 if __name__ == '__main__':
     import sys
     sys.path.append('..')
@@ -23,10 +23,6 @@ try:
 except ImportError:
     from ..model import SongInfo
     from ..model import BaseMusicer
-try:
-    from cookie import cookie
-except ImportError:
-    from .cookie import cookie
 
 
 current_path, _ = os.path.split(os.path.realpath(__file__))
@@ -40,13 +36,13 @@ class Musicer(BaseMusicer):
     SONG_URL = 'https://wwwapi.kugou.com/yy/index.php?r=play/getdata&callback=jQuery19103812022462601341_1644030495674&hash={filehash}&dfid=1JdqSp27zyLa3wraVj18xXYA&appid=1014&mid=f5cc0826aa228ba869e92dc2f7501c9c&platid=4&album_id={album_id}&_=1644030495675'
     HEADERS = {
         'user-agent': '',
-        'cookie': cookie,
+        'cookie': '',
         'referer': 'https://www.kugou.com/',
     }
     STR = 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwtbitrate=0callback=callback123clienttime={time}clientver=2000dfid=-inputtype=0iscorrection=1isfuzzy=0keyword={song}mid={time}page=1pagesize=30platform=WebFilterprivilege_filter=0srcappid=2919tag=emtoken=1d8ad00b0dedb733bed729be875518669c98f5ab075e95cf334daffb9b39491buserid=943077582uuid={time}NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt'
 
     def __init__(self):
-        super(Musicer, self).__init__(current_path=current_path)
+        super(Musicer, self).__init__(current_path=current_path, headers=self.HEADERS)
         self.match = re.compile('.*?\(([\\s\\S]*)\)')
         self._id_map = {}
 

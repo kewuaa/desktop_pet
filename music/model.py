@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-11 15:15:54
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-15 11:11:15
+# @Last Modified time: 2022-02-16 22:41:59
 from collections import namedtuple
 from http.cookies import SimpleCookie
 import os
@@ -19,7 +19,19 @@ class HZYErr(Exception):
     pass
 
 
+class FuncInvalidError(HZYErr):
+    pass
+
+
 class CookieInvalidError(HZYErr):
+    pass
+
+
+class LackLoginArgsError(HZYErr):
+    pass
+
+
+class LackCookieError(HZYErr):
     pass
 
 
@@ -27,16 +39,13 @@ class BaseMusicer(object):
     """basic of all musicer."""
 
     def __init__(
-            self, *, js: str = None, current_path: str):
+            self, *, js: str = None, current_path: str, headers: dict):
         super(BaseMusicer, self).__init__()
         self.sess = ClientSession()
         self.current_path = current_path
+        self._add_cookie(headers)
         if js is not None:
             self.load_js = self._load_js(js)
-
-    def load_login_args(self, *login_args):
-        assert len(login_args) == 2, '登录参数格式不正确'
-        self.login_id, self.password = login_args
 
     @staticmethod
     def _get_cookie_dict(cookie_str: str) -> dict:
@@ -52,8 +61,8 @@ class BaseMusicer(object):
             self.sess = ClientSession()
         return self.sess
 
-    def _load_js(self, js):
-        async def load_js(name):
+    def _load_js(self, js: str):
+        async def load_js(name: str):
             if not os.path.exists(
                     path := os.path.join(self.current_path, f'{name}.js')):
                 async with aiofile.open_async(
@@ -64,19 +73,58 @@ class BaseMusicer(object):
             self.js_path = path
         return load_js
 
+    async def _load_cookie(self):
+        if os.path.exists(path := os.path.join(self.current_path, 'cookie')):
+            async with aiofile.open_async(path, 'r') as f:
+                return await f.read()
+        else:
+            raise LackCookieError
+
+    def _add_cookie(self, headers: dict):
+        load_cookie_task = asyncio.create_task(self._load_cookie())
+
+        def update(*args):
+            if (e := load_cookie_task.exception()) is None:
+                headers.update({'cookie': load_cookie_task.result()})
+            else:
+                raise e
+        load_cookie_task.add_done_callback(update)
+
     async def _get_song_info(self, song):
         pass
 
     async def _get_song_url(self, _id):
         pass
 
-    async def login(self, login_id, password):
-        pass
+    async def _load_setting(self):
+        if os.path.exists(path := os.path.join(self.current_path, 'setting')):
+            async with aiofile.open_async(path, 'r') as f:
+                return {item[0]: item[1]
+                        for line in await f.readlines()
+                        if len(item := line.strip().split('=', 1)) > 1}
+
+    async def login(self):
+        if (login_args := await self._load_setting()) is not None:
+            assert 'login_id' in login_args and 'password' in login_args,\
+                'setting文件格式有误'
+        else:
+            raise LackLoginArgsError('尚未存在登录信息')
+        await self._login(**login_args)
+
+    async def _login(self, unprepare=None, **kwargs):
+        raise FuncInvalidError
+
+    async def reset_setting(self, **kwargs):
+        assert 'login_id' in kwargs and 'password' in kwargs
+        async with aiofile.open_async(
+                os.path.join(self.current_path, 'setting'), 'w') as f:
+            for k, v in kwargs.items():
+                await f.write(f'{k}={v}\n')
 
     async def _reset_cookie(self, cookie: str) -> None:
         async with aiofile.open_async(
-                os.path.join(self.current_path, 'cookie.py'), 'w') as f:
-            await f.write(f'cookie = "{cookie}"\n')
+                os.path.join(self.current_path, 'cookie'), 'w') as f:
+            await f.write(cookie)
 
     async def close(self):
         await self.session.close()

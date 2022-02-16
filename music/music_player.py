@@ -2,12 +2,13 @@
 # @Author: kewuaa
 # @Date:   2022-01-21 18:36:13
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-13 23:02:45
+# @Last Modified time: 2022-02-16 23:04:09
 if __name__ == '__main__':
     import sys
     sys.path.append('..')
 
 from io import BytesIO
+from inspect import signature
 from collections.abc import Coroutine
 import os
 import json
@@ -18,6 +19,7 @@ from aiohttp import request
 from PIL import Image
 from PySide2.QtWidgets import QApplication
 from PySide2.QtWidgets import QMainWindow
+from PySide2.QtWidgets import QDialog
 from PySide2.QtWidgets import QWidget
 from PySide2.QtWidgets import QLabel
 from PySide2.QtWidgets import QMessageBox
@@ -46,17 +48,21 @@ from qasync import QEventLoop
 from hzy.aiofile import aiofile
 try:
     from model import CookieInvalidError
+    from model import LackLoginArgsError
     from pictures import *
     from wyy import wyy
     from kg import kg
     from mg import mg
+    from ui_login import Ui_Dialog
     from ui_music_player import Ui_MainWindow
 except ImportError:
     from .model import CookieInvalidError
+    from .model import LackLoginArgsError
     from .pictures import *
     from .wyy import wyy
     from .kg import kg
     from .mg import mg
+    from .ui_login import Ui_Dialog
     from .ui_music_player import Ui_MainWindow
 
 
@@ -165,7 +171,61 @@ class MusicApp(object):
                         self.music_play_list.addMedia(await self._get_mediacontent(_id))
                         self.to_listen[song_info] = _id
 
+    def init_login_dialog(self):
+        app = self
+
+        class LoginUi(QDialog, Ui_Dialog):
+            """docstring for LoginUi."""
+
+            def __init__(self):
+                super(LoginUi, self).__init__()
+                self.setupUi(self)
+                self.setWindowModality(Qt.ApplicationModal)
+                self.numbers = {str(i) for i in range(10)}
+                self.messagelabel.setAlignment(Qt.AlignCenter)
+                self.messagelabel.setStyleSheet("color:red")
+
+            def login(self, login_id, password):
+                def call_back(*args):
+                    if (e := login_task.exception()) is None:
+                        asyncio.create_task(
+                            musicer.reset_setting(
+                                login_id=login_id, password=password))
+                    else:
+                        QMessageBox.warning(app.ui, '警告', str(e))
+                musicer = app.musicer[
+                    app.MAP[app.ui.musicercomboBox.currentText()]]
+                login_task = asyncio.create_task(
+                    musicer._login(login_id=login_id, password=password))
+                login_task.add_done_callback(call_back)
+
+            def accept(self):
+                message = ''
+                if not (login_id := self.loginidlineEdit.text()):
+                    message = '账号不能为空'
+                elif not set(login_id) <= self.numbers:
+                    message = '账号不能包含数字以外的元素'
+                elif not (password := self.passwordlineEdit.text()):
+                    message = '密码不能为空'
+                if message:
+                    self.messagelabel.setText(message)
+                else:
+                    self.login(login_id, password)
+                    super(LoginUi, self).accept()
+        self.login_dialog = LoginUi
+
+    def open_login_dialog(self):
+        dialog = self.login_dialog()
+        title = self.ui.musicercomboBox.currentText()
+        musicer = self.musicer[self.MAP[title]]
+        if signature(musicer._login).parameters.get('unprepare', False):
+            QMessageBox.information(self.ui, '提示', '该平台暂未实现登录功能')
+        else:
+            dialog.setWindowTitle(f'登录{title}音乐')
+            dialog.exec_()
+
     def initUi(self):
+        self.init_login_dialog()
         app = self
 
         class PlayerUi(QMainWindow, Ui_MainWindow):
@@ -205,8 +265,10 @@ class MusicApp(object):
         widget = QWidget()
         widget.setLayout(self.layout)
         self.menu = QMenu()
+        self.login_action = QAction('登录', triggered=self.open_login_dialog)
         self.change_download_path_action = QAction(
             '改变下载路径', triggered=self.change_download_path)
+        self.menu.addAction(self.login_action)
         self.menu.addAction(self.change_download_path_action)
         self.ui.resultscrollArea.setWidget(widget)
         self.ui.voicepushButton.clicked.connect(self.mute)
@@ -259,7 +321,7 @@ class MusicApp(object):
     async def add_style(self):
         def add_style_func():
             self.ui.statusBar().showMessage(
-                f'current download path: {self.DOWNLOAD_PATH}')
+                f'当前下载路径: {self.DOWNLOAD_PATH}')
             self.ui.searchButton.setToolTip('<b>点击此按钮进行搜索</b>')
             self.ui.voicepushButton.setToolTip('<b>音量</b>')
             self.ui.playpushButton.setToolTip('<b>播放</b>')
@@ -391,13 +453,17 @@ class MusicApp(object):
     @Slot()
     def search(self):
         song = self.ui.inputlineEdit.text()
-        musicer = self.ui.musicercomboBox.currentText()
-        if song:
-            if song != self.current_search or musicer != self.current_musicer:
-                self.clear_layout()
-                asyncio.create_task(self.search_song(song, self.MAP[musicer]))
-                self.current_search = song
-                self.current_musicer = musicer
+        if song.isspace():
+            self.ui.inputlineEdit.clear()
+        else:
+            song = song.strip()
+            musicer = self.ui.musicercomboBox.currentText()
+            if song:
+                if song != self.current_search or musicer != self.current_musicer:
+                    self.clear_layout()
+                    asyncio.create_task(self.search_song(song, self.MAP[musicer]))
+                    self.current_search = song
+                    self.current_musicer = musicer
 
     @Slot()
     def hide_and_show(self):
@@ -451,7 +517,7 @@ class MusicApp(object):
                     asyncio.get_running_loop().call_later(
                         0.1, self.to_download.pop, song_info)
         else:
-            QMessageBox.warning(self.ui, 'warning', 'no song could be downloaded')
+            QMessageBox.warning(self.ui, '警告', '没有可下载的歌曲')
 
     def add_listen(self, song_info, _id):
         async def add_func():
@@ -578,7 +644,7 @@ class MusicApp(object):
         try:
             songs_info = await self.musicer[musicer]._get_song_info(song)
         except AssertionError as e:
-            QMessageBox.critical(self.ui, 'error', str(e))
+            QMessageBox.critical(self.ui, '错误', str(e))
             self.ui.inputlineEdit.clear()
         else:
             for song_info in songs_info:
@@ -642,26 +708,32 @@ class MusicApp(object):
         try:
             url = await self.musicer[_id[1]]._get_song_url(_id[0])
         except AssertionError as e:
+            song = ''
+            if _id in self.to_download.values():
+                song = [song_info
+                        for song_info, id_ in self.to_download.items()
+                        if id_ == _id][0]
+            QMessageBox.critical(
+                self.ui, '错误',
+                f'{song}: {str(e)}' if song else str(e))
             asyncio.current_task().cancel()
-            try:
-                await asyncio.sleep(0)
-            except asyncio.CancelledError:
-                song = ''
-                if _id in self.to_download.values():
-                    song = [song_info
-                            for song_info, id_ in self.to_download.items()
-                            if id_ == _id][0]
-                QMessageBox.critical(
-                    self.ui, 'error',
-                    f'{song}: {str(e)}' if song else str(e))
-                raise
+            await asyncio.sleep(0)
         except CookieInvalidError as e:
             self.ui.statusBar().showMessage(
                 f'当前cookie已失效,正在重新登录......')
-            task = asyncio.create_task(self.musicer[_id[1]].login())
-            task.add_done_callback(lambda x: self.ui.statusBar().showMessage('登录成功！！！'))
-            asyncio.get_running_loop().call_later(
-                3, self.ui.statusBar().showMessage, f'current download path: {self.DOWNLOAD_PATH}')
+            login_task = asyncio.create_task(self.musicer[_id[1]].login())
+
+            def call_back(*args):
+                if (e := login_task.exception()) is None:
+                    self.ui.statusBar().showMessage('登录成功！！！')
+                    asyncio.get_running_loop().call_later(
+                        3, self.ui.statusBar().showMessage,
+                        f'当前下载路径: {self.DOWNLOAD_PATH}')
+                else:
+                    QMessageBox.critical(self.ui, '错误', str(e))
+                    if isinstance(e, LackLoginArgsError):
+                        pass
+            login_task.add_done_callback(call_back)
             asyncio.current_task().cancel()
             await asyncio.sleep(0)
         else:

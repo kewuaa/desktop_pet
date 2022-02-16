@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-07 00:40:21
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-14 22:40:49
+# @Last Modified time: 2022-02-16 22:50:08
 if __name__ == '__main__':
     import sys
     sys.path.append('..')
@@ -33,12 +33,6 @@ except ImportError:
     from ..model import BaseMusicer
     from ..model import SongInfo
     from ..model import CookieInvalidError
-try:
-    from cookie import cookie
-    from setting import *
-except ImportError:
-    from .cookie import cookie
-    from .setting import *
 
 
 current_path, _ = os.path.split(os.path.realpath(__file__))
@@ -56,13 +50,12 @@ class Musicer(BaseMusicer):
     TO_ENCRYP = '{"copyrightId":"%s","type":3,"auditionsFlag":11}'  # type: 标准:1 高品:2 无损:3,至臻:4 3D:5
     HEADERS = {
         'user-agent': '',
-        'cookie': cookie,
+        'cookie': '',
         'referer': '',
     }
 
     def __init__(self):
-        super(Musicer, self).__init__(current_path=current_path)
-        self.load_login_args(login_id, password)
+        super(Musicer, self).__init__(current_path=current_path, headers=self.HEADERS)
         self.encode = lambda string: quote(string).replace('/', '%2F').replace('%28', '(').replace('%29', ')')
 
     # async def init(self):
@@ -125,10 +118,10 @@ class Musicer(BaseMusicer):
         result = await res.json(content_type=None)
         if result['returnCode'] != '000000':
             raise CookieInvalidError(result['msg'])
-        url = result['data']['playUrl']
+        assert (url := result['data']['playUrl']), 'VIP或无版权歌曲，无法播放与下载'
         return ':'.join(['https', url])
 
-    async def login(self):
+    async def _login(self, login_id, password):
         url = 'https://passport.migu.cn/authn'
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36',
@@ -143,8 +136,8 @@ class Musicer(BaseMusicer):
             'sourceID': '220001',
             'appType': '0',
             'relayState': '',
-            'loginID': rsa.encrypt(self.login_id),
-            'enpassword': rsa.encrypt(self.password),
+            'loginID': rsa.encrypt(login_id),
+            'enpassword': rsa.encrypt(password),
             'captcha': '',
             'imgcodeType': '1',
             'rememberMeBox': '1',
@@ -160,7 +153,7 @@ class Musicer(BaseMusicer):
                                         encoded=True),
                                     headers=headers) as res:
             assert res.status == 200
-        cookies = self._get_cookie_dict(cookie)
+        cookies = self._get_cookie_dict(self.HEADERS['cookie'])
         cookies.update({i.key: i.value for i in res.cookies.values()})
         cookie_str = self.HEADERS['cookie'] = self._get_cookie_str(cookies)
         asyncio.create_task(self._reset_cookie(cookie_str))

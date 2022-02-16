@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-01-15 08:58:38
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-13 22:53:09
+# @Last Modified time: 2022-02-15 12:53:35
 if __name__ == '__main__':
     import sys
     sys.path.append('..')
@@ -56,26 +56,10 @@ class BaiduTranslater(object):
     TO = '英语'
     DOMAIN = '通用'
 
-    def __init__(self, _from=None, to=None, domain=None):
+    def __init__(self):
         super(BaiduTranslater, self).__init__()
         asyncio.create_task(self.load_js())
-        if _from is not None:
-            self.FROM = _from
-        if to is not None:
-            self.TO = to
-        if domain is not None:
-            self.DOMAIN = domain
         self.init_task = asyncio.create_task(self.init())
-        # res = req.get(self.BASE_URL, headers=self.HEADERS).text
-        # token, self._lang_map = self._get_token_and_map(res)
-        # self._domain_map = self._get_domains_map(res)
-        # self._map_dict = {**self._lang_map, **self._domain_map}
-        # self.data = {
-        #     'from': self._lang_map[self.FROM],
-        #     'to': self._lang_map[self.TO],
-        #     'domain': self._domain_map[self.DOMAIN],
-        #     'token': token,
-        # }
 
     async def init(self):
         self.sess = ClientSession()
@@ -121,7 +105,6 @@ class BaiduTranslater(object):
         """获得token参数."""
         token = re.search(r"token: '(.*)',", res).group(1)
         lang_map = re.search(r'langList: ({[\s\S]*?})', res).group(1)
-        # lang_map = re.sub(r"\s", '', lang_map)
         lang_map = lang_map.replace("'", '"')
         lang_map = json.loads(lang_map)
         lang_map = {lang: abbre for abbre, lang in lang_map.items()}
@@ -151,7 +134,6 @@ class BaiduTranslater(object):
             stderr=asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
         assert not stderr, f'subprocess err: {stderr.decode("gbk")}'
-        # popline = os.popen(self.CMD.format(path=f'{current_path}/sign.js', query=query))
         result = stdout.decode('utf-8').strip()
         return result
 
