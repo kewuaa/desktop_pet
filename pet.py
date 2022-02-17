@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-01-14 13:00:02
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-13 22:24:54
+# @Last Modified time: 2022-02-17 11:47:57
 import base64
 import asyncio
 import random
@@ -117,6 +117,8 @@ class Pet(QWidget):
         music_action.setIcon(self.music_app.ui.window_icon)
         action_bat = QAction(
             '导出bat脚本文件', parent=self, triggered=self.get_bat_file())
+        self.music_app.add_style_task.add_done_callback(
+            lambda x: action_bat.setIcon(self.music_app.export_icon))
         menu = QMenu('exit', parent=self)
         menu.addAction(action_bat)
         menu.addAction(music_action)

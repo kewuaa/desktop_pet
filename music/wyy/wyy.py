@@ -2,13 +2,14 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 13:30:14
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-16 22:43:55
+# @Last Modified time: 2022-02-17 11:40:24
+import os
+current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
     import sys
-    sys.path.append('..')
-    sys.path.append('../..')
+    sys.path.append(os.path.join(current_path, '..'))
+    sys.path.append(os.path.join(current_path, '../..'))
 
-import os
 import json
 import base64
 import hashlib
@@ -25,7 +26,6 @@ except ImportError:
     from ..model import BaseMusicer
 
 
-current_path, _ = os.path.split(os.path.realpath(__file__))
 ua = fake_ua.UserAgent()
 
 
@@ -44,8 +44,6 @@ class Musicer(BaseMusicer):
     URL = 'https://music.163.com/weapi/song/enhance/player/url/v1?csrf_token='
     SEARCH_URL = 'https://music.163.com/weapi/cloudsearch/get/web?csrf_token='
     HEADERS = {
-        'user-agent': '',
-        'cookie': '',
         'referer': 'https://music.163.com/',
     }
     DATA = {

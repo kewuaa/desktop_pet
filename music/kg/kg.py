@@ -2,11 +2,13 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 16:17:25
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-15 16:25:45
+# @Last Modified time: 2022-02-17 11:39:35
+import os
+current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
     import sys
-    sys.path.append('..')
-    sys.path.append('../..')
+    sys.path.append(os.path.join(current_path, '..'))
+    sys.path.append(os.path.join(current_path, '../..'))
 
 from urllib.parse import quote
 import os
@@ -35,8 +37,6 @@ class Musicer(BaseMusicer):
     SEARCH_URL = 'https://complexsearch.kugou.com/v2/search/song?callback=callback123&keyword={song}&page=1&pagesize=30&bitrate=0&isfuzzy=0&tag=em&inputtype=0&platform=WebFilter&userid=943077582&clientver=2000&iscorrection=1&privilege_filter=0&token=1d8ad00b0dedb733bed729be875518669c98f5ab075e95cf334daffb9b39491b&srcappid=2919&clienttime={time}&mid={time}&uuid={time}&dfid=-&signature={signature}'
     SONG_URL = 'https://wwwapi.kugou.com/yy/index.php?r=play/getdata&callback=jQuery19103812022462601341_1644030495674&hash={filehash}&dfid=1JdqSp27zyLa3wraVj18xXYA&appid=1014&mid=f5cc0826aa228ba869e92dc2f7501c9c&platid=4&album_id={album_id}&_=1644030495675'
     HEADERS = {
-        'user-agent': '',
-        'cookie': '',
         'referer': 'https://www.kugou.com/',
     }
     STR = 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwtbitrate=0callback=callback123clienttime={time}clientver=2000dfid=-inputtype=0iscorrection=1isfuzzy=0keyword={song}mid={time}page=1pagesize=30platform=WebFilterprivilege_filter=0srcappid=2919tag=emtoken=1d8ad00b0dedb733bed729be875518669c98f5ab075e95cf334daffb9b39491buserid=943077582uuid={time}NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt'

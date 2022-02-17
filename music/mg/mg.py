@@ -2,14 +2,15 @@
 # @Author: kewuaa
 # @Date:   2022-02-07 00:40:21
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-16 22:50:08
+# @Last Modified time: 2022-02-17 11:40:19
+import os
+current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
     import sys
-    sys.path.append('..')
-    sys.path.append('../..')
+    sys.path.append(os.path.join(current_path, '..'))
+    sys.path.append(os.path.join(current_path, '../..'))
 
 from urllib.parse import quote
-import os
 import json
 import time
 import hashlib
@@ -35,7 +36,6 @@ except ImportError:
     from ..model import CookieInvalidError
 
 
-current_path, _ = os.path.split(os.path.realpath(__file__))
 ua = fake_ua.UserAgent('internetexplorer')
 fromstring = AsyncFuncWrapper(fromstring)
 
@@ -47,12 +47,8 @@ class Musicer(BaseMusicer):
     KEY_STR = 'c001002Afhtmlk3915f4a1-4229-4cf9-86a3-08d888cbf524-n41644147336766keyword{keyword}s{s}u{user_agent}/220001v3.22.4'
     SONG_URL = 'https://music.migu.cn/v3/api/music/audioPlayer/getPlayInfo?dataType=2&data={}&secKey=ElP1Za4xkAwkmEnBhaswmP%2FcK91dJQEYRVjJSVvQ9PKXL1CrvdcQVQ2MbjtSfy1JMU8o%2FzkTJY2ypU3NWk%2BXf7aYAv93IdJQAJZKmC%2Fe%2B48V2s52iOeCUcFYc9piXHT%2FMlawqSS4bwaqX%2BucR9J1A3XE21rQSkhjPKLXOAhRESc%3D'
     PERSONAL_KEY = '4ea5c508a6566e76240543f8feb06fd457777be39549c4016436afda65d2330e'
-    TO_ENCRYP = '{"copyrightId":"%s","type":3,"auditionsFlag":11}'  # type: 标准:1 高品:2 无损:3,至臻:4 3D:5
-    HEADERS = {
-        'user-agent': '',
-        'cookie': '',
-        'referer': '',
-    }
+    TO_ENCRYP = '{"copyrightId":"%s","type":2,"auditionsFlag":11}'  # type: 标准:1 高品:2 无损:3,至臻:4 3D:5
+    HEADERS = {}
 
     def __init__(self):
         super(Musicer, self).__init__(current_path=current_path, headers=self.HEADERS)
@@ -147,7 +143,7 @@ class Musicer(BaseMusicer):
         }
         res = await self.session.post(url, headers=headers, data=data)
         result = await res.json(content_type=None)
-        assert result['status'] == 2000, result['message']
+        assert result['status'] == 2000, '登录失败'
         token = result['result']['token']
         async with self.session.get(URL(f'https://music.migu.cn/v3/user/login?callbackURL=https%3A%2F%2Fmusic.migu.cn%2Fv3&relayState=&token={token}',
                                         encoded=True),

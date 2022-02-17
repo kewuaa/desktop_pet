@@ -2,15 +2,16 @@
 # @Author: kewuaa
 # @Date:   2022-01-21 18:36:13
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-16 23:04:09
+# @Last Modified time: 2022-02-17 11:46:53
+import os
+current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
     import sys
-    sys.path.append('..')
+    sys.path.append(os.path.join(current_path, '..'))
 
 from io import BytesIO
 from inspect import signature
 from collections.abc import Coroutine
-import os
 import json
 import base64
 import asyncio
@@ -64,9 +65,6 @@ except ImportError:
     from .mg import mg
     from .ui_login import Ui_Dialog
     from .ui_music_player import Ui_MainWindow
-
-
-current_path, _ = os.path.split(os.path.realpath(__file__))
 
 
 async def download(url, path):
@@ -191,6 +189,10 @@ class MusicApp(object):
                         asyncio.create_task(
                             musicer.reset_setting(
                                 login_id=login_id, password=password))
+                        app.ui.statusBar().showMessage('登录成功')
+                        asyncio.get_running_loop().call_later(
+                            3, app.ui.statusBar().showMessage,
+                            f'当前下载路径: {app.DOWNLOAD_PATH}')
                     else:
                         QMessageBox.warning(app.ui, '警告', str(e))
                 musicer = app.musicer[
@@ -300,7 +302,7 @@ class MusicApp(object):
         self.ui.processhorizontalSlider.setEnabled(False)
         self.ui.downloadgroupBox.hide()
         self.ui.resize(967, 686)
-        asyncio.create_task(self.add_style())
+        self.add_style_task = asyncio.create_task(self.add_style())
 
     @Slot()
     def get_bat_file(self):
@@ -343,6 +345,7 @@ class MusicApp(object):
                 self._get_icon(item_loop_py)])
             self.hide_icon = self._get_icon(hide_py)
             self.show_icon = self._get_icon(show_py)
+            self.export_icon = self._get_icon(export_py)
             self.ui.playpushButton.setIcon(self.play_icon)
             self.ui.voicepushButton.setIcon(self.sound_on_icon)
             self.ui.hideandshowpushButton.setIcon(self.hide_icon)
@@ -351,6 +354,8 @@ class MusicApp(object):
             self.ui.lastpushButton.setIcon(self._get_icon(previous_py))
             self.ui.modepushButton.setIcon(list_loop_icon)
             self.ui.downloadtoolButton.setIcon(self._get_icon(download_py))
+            self.ui.action_bat.setIcon(self.export_icon)
+            self.login_action.setIcon(self._get_icon(login_py))
             self.change_download_path_action.setIcon(self._get_icon(download_path_setting_py))
         await asyncio.get_running_loop().run_in_executor(None, add_style_func)
 
@@ -613,11 +618,6 @@ class MusicApp(object):
 
     @Slot()
     def last_song(self):
-        # if not self.music_play_list.currentIndex():
-        #     self.music_play_list.setCurrentIndex(
-        #         self.music_play_list.mediaCount() - 1)
-        # else:
-        #     self.music_play_list.previous()
         self.music_play_list.previous()
 
     @Slot()
@@ -634,10 +634,6 @@ class MusicApp(object):
 
     @Slot()
     def next_song(self):
-        # if self.music_play_list.currentIndex() == self.music_play_list.mediaCount() - 1:
-        #     self.music_play_list.setCurrentIndex(0)
-        # else:
-        #     self.music_play_list.next()
         self.music_play_list.next()
 
     async def search_song(self, song, musicer):
@@ -649,28 +645,6 @@ class MusicApp(object):
         else:
             for song_info in songs_info:
                 asyncio.create_task(self.show_label(song_info))
-                # item = QWidget()
-                # item.setLayout(hbox := QHBoxLayout())
-                # hbox.addWidget(add_music_button := QToolButton())
-                # hbox.addWidget(add_button := QToolButton())
-                # hbox.addWidget(song_label := SongLabel(song_info.text))
-                # add_music_button.clicked.connect(self.add_listen(song_info.text, song_info.id))
-                # add_button.clicked.connect(self.add_download(song_info.text, song_info.id))
-                # song_label.doubleclicked.connect(self.single_play(song_info.text, song_info.id))
-                # add_music_button.setIcon(self.add_music_icon)
-                # add_button.setIcon(self.add_icon)
-                # add_music_button.setAutoRaise(True)
-                # add_button.setAutoRaise(True)
-                # add_music_button.setToolTip('<b>添加至播放列表</b>')
-                # add_button.setToolTip('<b>添加至下载列表</b>')
-                # self.layout.addWidget(item)
-                # if not os.path.exists(
-                #         path := os.path.join(
-                #             self.IMG_PATH, song_info.pic)):
-                #     asyncio.create_task(
-                #         download_img(song_info.pic_url, path))
-                # song_label.setToolTip(f'<img src={path} >')
-                # await asyncio.sleep(0)
 
     async def show_label(self, song_info):
         if isinstance(song_info, Coroutine):
@@ -719,10 +693,6 @@ class MusicApp(object):
             asyncio.current_task().cancel()
             await asyncio.sleep(0)
         except CookieInvalidError as e:
-            self.ui.statusBar().showMessage(
-                f'当前cookie已失效,正在重新登录......')
-            login_task = asyncio.create_task(self.musicer[_id[1]].login())
-
             def call_back(*args):
                 if (e := login_task.exception()) is None:
                     self.ui.statusBar().showMessage('登录成功！！！')
@@ -732,7 +702,10 @@ class MusicApp(object):
                 else:
                     QMessageBox.critical(self.ui, '错误', str(e))
                     if isinstance(e, LackLoginArgsError):
-                        pass
+                        self.open_login_dialog()
+            self.ui.statusBar().showMessage(
+                f'当前cookie已失效,正在重新登录......')
+            login_task = asyncio.create_task(self.musicer[_id[1]].login())
             login_task.add_done_callback(call_back)
             asyncio.current_task().cancel()
             await asyncio.sleep(0)
