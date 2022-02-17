@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-11 15:15:54
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-16 22:41:59
+# @Last Modified time: 2022-02-17 12:42:35
 from collections import namedtuple
 from http.cookies import SimpleCookie
 import os
@@ -39,10 +39,12 @@ class BaseMusicer(object):
     """basic of all musicer."""
 
     def __init__(
-            self, *, js: str = None, current_path: str, headers: dict):
+            self, *, js: str = None, current_path: str,
+            headers: dict, cookie: str):
         super(BaseMusicer, self).__init__()
         self.sess = ClientSession()
         self.current_path = current_path
+        self.spare_cookie = cookie
         self._add_cookie(headers)
         if js is not None:
             self.load_js = self._load_js(js)
@@ -81,13 +83,13 @@ class BaseMusicer(object):
             raise LackCookieError
 
     def _add_cookie(self, headers: dict):
-        load_cookie_task = asyncio.create_task(self._load_cookie())
-
         def update(*args):
             if (e := load_cookie_task.exception()) is None:
-                headers.update({'cookie': load_cookie_task.result()})
+                cookie = load_cookie_task.result()
             else:
-                raise e
+                cookie = self.spare_cookie
+            headers.update({'cookie': cookie})
+        load_cookie_task = asyncio.create_task(self._load_cookie())
         load_cookie_task.add_done_callback(update)
 
     async def _get_song_info(self, song):

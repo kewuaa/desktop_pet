@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 16:17:25
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-17 11:39:35
+# @Last Modified time: 2022-02-17 12:42:48
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -27,8 +27,8 @@ except ImportError:
     from ..model import BaseMusicer
 
 
-current_path, _ = os.path.split(os.path.realpath(__file__))
 ua = fake_ua.UserAgent()
+spare_cookie = 'kg_mid=f5cc0826aa228ba869e92dc2f7501c9c; kg_dfid=1JdqSp27zyLa3wraVj18xXYA; Hm_lvt_aedee6983d4cfc62f509129360d6bb3d=1642742193,1642742812,1643949951; kg_dfid_collect=d41d8cd98f00b204e9800998ecf8427e; kg_mid_temp=f5cc0826aa228ba869e92dc2f7501c9c; KuGoo=KugooID=943077582&KugooPwd=61698FFE640EB1FAB166F74963062A4E&NickName=%u0033%u0033%u662f%u0073%u0074%u0075%u0070%u0069%u0064%u7684%u5973%u670b%u53cb&Pic=http://imge.kugou.com/kugouicon/165/20211207/20211207190111627338.jpg&RegState=1&RegFrom=&t=1d8ad00b0dedb733bed729be875518669c98f5ab075e95cf334daffb9b39491b&t_ts=1643964933&t_key=&a_id=1014&ct=1643964933&UserName=%u006b%u0067%u006f%u0070%u0065%u006e%u0039%u0034%u0033%u0030%u0037%u0037%u0035%u0038%u0032; KugooID=943077582; t=1d8ad00b0dedb733bed729be875518669c98f5ab075e95cf334daffb9b39491b; a_id=1014; UserName=%u006b%u0067%u006f%u0070%u0065%u006e%u0039%u0034%u0033%u0030%u0037%u0037%u0035%u0038%u0032; mid=f5cc0826aa228ba869e92dc2f7501c9c; dfid=1JdqSp27zyLa3wraVj18xXYA; Hm_lpvt_aedee6983d4cfc62f509129360d6bb3d=1643964943'
 
 
 class Musicer(BaseMusicer):
@@ -42,7 +42,8 @@ class Musicer(BaseMusicer):
     STR = 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwtbitrate=0callback=callback123clienttime={time}clientver=2000dfid=-inputtype=0iscorrection=1isfuzzy=0keyword={song}mid={time}page=1pagesize=30platform=WebFilterprivilege_filter=0srcappid=2919tag=emtoken=1d8ad00b0dedb733bed729be875518669c98f5ab075e95cf334daffb9b39491buserid=943077582uuid={time}NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt'
 
     def __init__(self):
-        super(Musicer, self).__init__(current_path=current_path, headers=self.HEADERS)
+        super(Musicer, self).__init__(
+            current_path=current_path, headers=self.HEADERS, cookie=spare_cookie)
         self.match = re.compile('.*?\(([\\s\\S]*)\)')
         self._id_map = {}
 
