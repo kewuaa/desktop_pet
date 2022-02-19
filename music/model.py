@@ -2,8 +2,9 @@
 # @Author: kewuaa
 # @Date:   2022-02-11 15:15:54
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-17 12:42:35
+# @Last Modified time: 2022-02-19 20:36:17
 from collections import namedtuple
+from functools import wraps
 from http.cookies import SimpleCookie
 import os
 import base64
@@ -13,6 +14,8 @@ from hzy.aiofile import aiofile
 from aiohttp import ClientSession
 
 SongInfo = namedtuple('SongInfo', ['text', 'id', 'pic', 'pic_url'])
+SongUrl = namedtuple('SongUrl', ['url', 'vip'], defaults=(False,))
+SongID = namedtuple('SongID', ['id', 'app'])
 
 
 class HZYErr(Exception):
@@ -39,13 +42,13 @@ class BaseMusicer(object):
     """basic of all musicer."""
 
     def __init__(
-            self, *, js: str = None, current_path: str,
-            headers: dict, cookie: str):
+            self, *, js: str = None, current_path: str, cookie: str):
         super(BaseMusicer, self).__init__()
+        self.headers = {}
         self.sess = ClientSession()
         self.current_path = current_path
         self.spare_cookie = cookie
-        self._add_cookie(headers)
+        self._add_cookie()
         if js is not None:
             self.load_js = self._load_js(js)
 
@@ -82,20 +85,20 @@ class BaseMusicer(object):
         else:
             raise LackCookieError
 
-    def _add_cookie(self, headers: dict):
+    def _add_cookie(self):
         def update(*args):
             if (e := load_cookie_task.exception()) is None:
                 cookie = load_cookie_task.result()
             else:
                 cookie = self.spare_cookie
-            headers.update({'cookie': cookie})
+            self.headers.update({'cookie': cookie})
         load_cookie_task = asyncio.create_task(self._load_cookie())
         load_cookie_task.add_done_callback(update)
 
     async def _get_song_info(self, song):
         pass
 
-    async def _get_song_url(self, _id):
+    async def _get_song_url(self, *_id):
         pass
 
     async def _load_setting(self):
@@ -127,6 +130,16 @@ class BaseMusicer(object):
         async with aiofile.open_async(
                 os.path.join(self.current_path, 'cookie'), 'w') as f:
             await f.write(cookie)
+
+    def _update_cookie(self, login_func):
+        @wraps(login_func)
+        async def _login(*args, **kwargs):
+            new_cookie = await login_func(*args, **kwargs)
+            cookies = self._get_cookie_dict(self.headers['cookie'])
+            cookies.update(new_cookie)
+            cookie_str = self.headers['cookie'] = self._get_cookie_str(cookies)
+            asyncio.create_task(self._reset_cookie(cookie_str))
+        return _login
 
     async def close(self):
         await self.session.close()

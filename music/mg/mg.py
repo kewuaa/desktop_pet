@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-07 00:40:21
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-17 12:40:56
+# @Last Modified time: 2022-02-19 20:59:02
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -25,6 +25,8 @@ from hzy.aiofile.aiofile import AsyncFuncWrapper
 try:
     from model import BaseMusicer
     from model import SongInfo
+    from model import SongUrl
+    from model import SongID
     from model import CookieInvalidError
     from AES import encrypt
     from RSA import RSA
@@ -33,6 +35,8 @@ except ImportError:
     from ..RSA import RSA
     from ..model import BaseMusicer
     from ..model import SongInfo
+    from ..model import SongUrl
+    from ..model import SongID
     from ..model import CookieInvalidError
 
 
@@ -49,11 +53,11 @@ class Musicer(BaseMusicer):
     SONG_URL = 'https://music.migu.cn/v3/api/music/audioPlayer/getPlayInfo?dataType=2&data={}&secKey=ElP1Za4xkAwkmEnBhaswmP%2FcK91dJQEYRVjJSVvQ9PKXL1CrvdcQVQ2MbjtSfy1JMU8o%2FzkTJY2ypU3NWk%2BXf7aYAv93IdJQAJZKmC%2Fe%2B48V2s52iOeCUcFYc9piXHT%2FMlawqSS4bwaqX%2BucR9J1A3XE21rQSkhjPKLXOAhRESc%3D'
     PERSONAL_KEY = '4ea5c508a6566e76240543f8feb06fd457777be39549c4016436afda65d2330e'
     TO_ENCRYP = '{"copyrightId":"%s","type":2,"auditionsFlag":11}'  # type: 标准:1 高品:2 无损:3,至臻:4 3D:5
-    HEADERS = {}
 
     def __init__(self):
         super(Musicer, self).__init__(
-            current_path=current_path, headers=self.HEADERS, cookie=spare_cookie)
+            current_path=current_path, cookie=spare_cookie)
+        self._login = self._update_cookie(self._login) 
         self.encode = lambda string: quote(string).replace('/', '%2F').replace('%28', '(').replace('%29', ')')
 
     # async def init(self):
@@ -74,8 +78,8 @@ class Musicer(BaseMusicer):
     async def _get_song_info(self, song):
         keyword = quote(song)
         time_stamp = int(time.time())
-        self.HEADERS['referer'] = 'https://music.migu.cn/v3'
-        user_agent = self.HEADERS['user-agent'] = ua.get_ua()
+        self.headers['referer'] = 'https://music.migu.cn/v3'
+        user_agent = self.headers['user-agent'] = ua.get_ua()
         sha1 = hashlib.sha1(self.encode(self.KEY_STR.format(
                                         keyword=keyword,
                                         s=time_stamp,
@@ -85,7 +89,7 @@ class Musicer(BaseMusicer):
             self.SEARCH_URL.format(i=sha1.hexdigest(),
                                    s=time_stamp,
                                    keyword=keyword),
-            headers=self.HEADERS,
+            headers=self.headers,
             allow_redirects=False)
         assert (status := res.status) == 200, f'response: {status}'
         text = await res.text()
@@ -99,27 +103,27 @@ class Musicer(BaseMusicer):
             './div[@class="song-actions single-column"]//@data-share')[0]
         info_dict = json.loads(info)
         return SongInfo(f'咪咕: {info_dict["title"]}-->{info_dict["singer"]}--><{info_dict["album"]}>',
-                        (os.path.split(info_dict['linkUrl'])[1], 'mg'),
+                        SongID((os.path.split(info_dict['linkUrl'])[1],), 'mg'),
                         os.path.split(pic_url := info_dict['imgUrl'])[1],
                         ':'.join(['https', pic_url]))
 
     async def _get_song_url(self, _id):
-        self.HEADERS['referer'] = 'https://music.migu.cn/v3/music/player/audio'
-        self.HEADERS['user-agent'] = ua.get_ua()
+        self.headers['referer'] = 'https://music.migu.cn/v3/music/player/audio'
+        self.headers['user-agent'] = ua.get_ua()
         to_encryp = self.TO_ENCRYP % _id
         data = encrypt(to_encryp, self.PERSONAL_KEY).decode()
         data = self.encode(data)
         res = await self.session.get(URL(self.SONG_URL.format(data), encoded=True),
-                                     headers=self.HEADERS,
+                                     headers=self.headers,
                                      allow_redirects=False)
         assert (status := res.status) == 200, f'response: {status}'
         result = await res.json(content_type=None)
         if result['returnCode'] != '000000':
             raise CookieInvalidError(result['msg'])
         assert (url := result['data']['playUrl']), 'VIP或无版权歌曲，无法播放与下载'
-        return ':'.join(['https', url])
+        return SongUrl(':'.join(['https', url]))
 
-    async def _login(self, login_id, password):
+    async def _login(self, login_id, password, **kwargs):
         url = 'https://passport.migu.cn/authn'
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36',
@@ -151,7 +155,8 @@ class Musicer(BaseMusicer):
                                         encoded=True),
                                     headers=headers) as res:
             assert res.status == 200
-        cookies = self._get_cookie_dict(self.HEADERS['cookie'])
-        cookies.update({i.key: i.value for i in res.cookies.values()})
-        cookie_str = self.HEADERS['cookie'] = self._get_cookie_str(cookies)
-        asyncio.create_task(self._reset_cookie(cookie_str))
+        return {i.key: i.value for i in res.cookies.values()}
+        # cookies = self._get_cookie_dict(self.headers['cookie'])
+        # cookies.update({i.key: i.value for i in res.cookies.values()})
+        # cookie_str = self.headers['cookie'] = self._get_cookie_str(cookies)
+        # asyncio.create_task(self._reset_cookie(cookie_str))

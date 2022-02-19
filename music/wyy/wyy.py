@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 13:30:14
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-17 12:43:32
+# @Last Modified time: 2022-02-19 22:47:17
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -20,9 +20,13 @@ from Crypto.Cipher import AES
 from hzy import fake_ua
 try:
     from model import SongInfo
+    from model import SongUrl
+    from model import SongID
     from model import BaseMusicer
 except ImportError:
     from ..model import SongInfo
+    from ..model import SongUrl
+    from ..model import SongID
     from ..model import BaseMusicer
 
 
@@ -44,9 +48,6 @@ class Musicer(BaseMusicer):
 
     URL = 'https://music.163.com/weapi/song/enhance/player/url/v1?csrf_token='
     SEARCH_URL = 'https://music.163.com/weapi/cloudsearch/get/web?csrf_token='
-    HEADERS = {
-        'referer': 'https://music.163.com/',
-    }
     DATA = {
         'params': '',
         'encSecKey': 'ddb9e95ecba455a303a46b36f291368947d49531f824f5c4adbea2ff7ce22a2e0615a837d727ced55fdbfa85b3590466a39b85749ee5845d29786a7727fd8f154f953ca755d533fe84aa0f100c767f6dbc8441a5ad35711706cb9cf662018025a4519405aa738af496cd3d01594d62821ed0f39b4af97dee184b26e655dd4737',
@@ -72,7 +73,9 @@ class Musicer(BaseMusicer):
 
     def __init__(self):
         super(Musicer, self).__init__(
-            current_path=current_path, headers=self.HEADERS, cookie=spare_cookie)
+            current_path=current_path, cookie=spare_cookie)
+        self.headers['referer'] = 'https://music.163.com/'
+        self._login = self._update_cookie(self._login)
 
     def encrypt(self, text):
         text = aes_encrypt(text, self.g)
@@ -80,36 +83,36 @@ class Musicer(BaseMusicer):
         return result
 
     async def _get_song_info(self, song):
-        self.HEADERS['user-agent'] = ua.get_ua()
+        self.headers['user-agent'] = ua.get_ua()
         self.INFO_REQUEST_DICT['s'] = song
         self.DATA['params'] = self.encrypt(json.dumps(self.INFO_REQUEST_DICT))
         res = await self.session.post(
-            self.SEARCH_URL, headers=self.HEADERS, data=self.DATA)
+            self.SEARCH_URL, headers=self.headers, data=self.DATA)
         assert (status := res.status) == 200, f'response: {status}'
         result_dict = await res.json(content_type=None)
         assert (results := result_dict.get('result')) is not None, '出现未知错误'
         songs = results['songs']
         return [SongInfo(
             f"网易云: {song['name']}-->{song['ar'][0]['name']}-->《{song['al']['name']}》",
-            (str(song['id']), 'wyy'),
+            SongID((str(song['id']),), 'wyy'),
             os.path.split(pic_url := song['al']['picUrl'])[1],
             pic_url)
             for song in songs]
 
     async def _get_song_url(self, _id):
-        self.HEADERS['user-agent'] = ua.get_ua()
+        self.headers['user-agent'] = ua.get_ua()
         self.URL_REQUEST_DICT['ids'] = f'[{str(_id)}]'
         self.DATA['params'] = self.encrypt(json.dumps(self.URL_REQUEST_DICT))
-        res = await self.session.post(self.URL, headers=self.HEADERS, data=self.DATA)
+        res = await self.session.post(self.URL, headers=self.headers, data=self.DATA)
         assert (status := res.status) == 200, f'response: {status}'
         result_dict = await res.json(content_type=None)
         assert (url := result_dict['data'][0]['url']) is not None,\
             'VIP或无版权歌曲，无法播放与下载'
-        return url
+        return SongUrl(url)
 
     # 存在问题待解决
     # 登录功能暂时不可使用
-    async def _login(self, login_id, password):
+    async def _login(self, login_id, password, **kwargs):
         # try:
         url = 'https://music.163.com/weapi/w/register/cellphone?csrf_token='
         headers = {
@@ -130,11 +133,12 @@ class Musicer(BaseMusicer):
         res = await self.session.post(url, headers=headers, data=self.DATA)
         result = await res.json(content_type=None)
         assert result['code'] == 200, result['msg']
+        return {i.key: i.value for i in res.cookies.values()}
         # finally:
         #     await self.close()
         # cookies = self._get_cookie_dict(cookie)
         # cookies.update({i.key: i.value for i in res.cookies.values()})
-        # cookie_str = self.HEADERS['cookie'] = self._get_cookie_str(cookies)
+        # cookie_str = self.headers['cookie'] = self._get_cookie_str(cookies)
         # asyncio.create_task(self._reset_cookie(cookie_str))
 
     async def get_checktoken(self):

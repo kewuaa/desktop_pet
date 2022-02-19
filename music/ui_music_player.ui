@@ -66,6 +66,11 @@
                   </item>
                   <item>
                    <property name="text">
+                    <string>千千静听</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
                     <string>酷狗</string>
                    </property>
                   </item>

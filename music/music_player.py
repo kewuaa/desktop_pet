@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-01-21 18:36:13
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-17 11:46:53
+# @Last Modified time: 2022-02-19 22:44:44
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -12,7 +12,7 @@ if __name__ == '__main__':
 from io import BytesIO
 from inspect import signature
 from collections.abc import Coroutine
-import json
+import pickle
 import base64
 import asyncio
 
@@ -54,6 +54,7 @@ try:
     from wyy import wyy
     from kg import kg
     from mg import mg
+    from qqjt import qqjt
     from ui_login import Ui_Dialog
     from ui_music_player import Ui_MainWindow
 except ImportError:
@@ -63,6 +64,7 @@ except ImportError:
     from .wyy import wyy
     from .kg import kg
     from .mg import mg
+    from .qqjt import qqjt
     from .ui_login import Ui_Dialog
     from .ui_music_player import Ui_MainWindow
 
@@ -102,6 +104,10 @@ class MyDict(dict):
         super(MyDict, self).clear()
         self.slm.setStringList([])
 
+    def update(self, key_map: dict):
+        super(MyDict, self).update(key_map)
+        self.slm.setStringList(self.keys())
+
 
 class SongLabel(QLabel):
     """docstring for SongLabel."""
@@ -122,8 +128,8 @@ class MusicApp(object):
     DATA_PATH = f'{current_path}\\data'
     IMG_PATH = os.path.join(DATA_PATH, 'images')
     DOWNLOAD_PATH = os.path.join(DATA_PATH, 'musics')
-    SAVE_PATH = os.path.join(DATA_PATH, 'listen.dump')
-    MAP = {'网易云': 'wyy', '酷狗': 'kg', '咪咕': 'mg'}
+    SAVE_PATH = os.path.join(DATA_PATH, 'listen')
+    MAP = {'网易云': 'wyy', '酷狗': 'kg', '咪咕': 'mg', '千千静听': 'qqjt'}
 
     def __init__(self):
         super(MusicApp, self).__init__()
@@ -141,7 +147,12 @@ class MusicApp(object):
         self.listen_slm = QStringListModel()
         self.download_slm = QStringListModel()
         self.initUi()
-        self.musicer = {'wyy': wyy.Musicer(), 'kg': kg.Musicer(), 'mg': mg.Musicer()}
+        self.musicer = {
+            'wyy': wyy.Musicer(),
+            'kg': kg.Musicer(),
+            'mg': mg.Musicer(),
+            'qqjt': qqjt.Musicer(),
+        }
         self.music_player = QMediaPlayer(parent=self.ui)
         self.music_play_list = QMediaPlaylist(parent=self.ui)
         self.music_play_list.setPlaybackMode(QMediaPlaylist.Loop)
@@ -157,17 +168,11 @@ class MusicApp(object):
 
     async def load_listen_list(self):
         if os.path.exists(self.SAVE_PATH):
-            async with aiofile.open_async(self.SAVE_PATH, 'r') as f:
-                dump = await f.read()
-                kg_id_map_dump, to_listen_dump = dump.split('>^<')
-                if to_listen_dump:
-                    self.musicer['kg']._id_map.update(
-                        await aiofile.AsyncFuncWrapper(json.loads)(kg_id_map_dump))
-                    for line in to_listen_dump.split('\n'):
-                        song_info, _id = line.split('^3^')
-                        _id = tuple(_id.split('^_^'))
-                        self.music_play_list.addMedia(await self._get_mediacontent(_id))
-                        self.to_listen[song_info] = _id
+            with open(self.SAVE_PATH, 'rb') as f:
+                if key_map := await aiofile.AsyncFuncWrapper(pickle.load)(f):
+                    self.to_listen.update(key_map)
+            for _id in self.to_listen.values():
+                self.music_play_list.addMedia(await self._get_mediacontent(_id))
 
     def init_login_dialog(self):
         app = self
@@ -221,7 +226,7 @@ class MusicApp(object):
         title = self.ui.musicercomboBox.currentText()
         musicer = self.musicer[self.MAP[title]]
         if signature(musicer._login).parameters.get('unprepare', False):
-            QMessageBox.information(self.ui, '提示', '该平台暂未实现登录功能')
+            QMessageBox.information(self.ui, '提示', '暂未实现该平台的登录功能')
         else:
             dialog.setWindowTitle(f'登录{title}音乐')
             dialog.exec_()
@@ -251,14 +256,8 @@ class MusicApp(object):
 
             @staticmethod
             def save():
-                to_listen_dump = '\n'.join(
-                    [f'{k}^3^{"^_^".join(v)}'
-                     for k, v in app.to_listen.items()])
-                kg_id_map_dump = json.dumps({v[0]: app.musicer['kg']._id_map[v[0]]
-                                             for _, v in app.to_listen.items()
-                                             if v[1] == 'kg'})
-                with open(app.SAVE_PATH, 'w') as f:
-                    f.write('>^<'.join([kg_id_map_dump, to_listen_dump]))
+                with open(app.SAVE_PATH, 'wb') as f:
+                    pickle.dump({**app.to_listen}, f)
 
         # self.ui = QUiLoader().load('ui_music_player.ui')
         self.ui = PlayerUi()
@@ -514,9 +513,10 @@ class MusicApp(object):
     def download(self):
         if self.to_download:
             for song_info in self.to_download.keys():
+                _id = self.to_download[song_info]
                 if not os.path.exists(
                         path := os.path.join(
-                            self.DOWNLOAD_PATH, f'{"_".join(self.to_download[song_info])}.m4a')):
+                            self.DOWNLOAD_PATH, f'{"_".join([*_id.id, _id.app])}.m4a')):
                     asyncio.create_task(self.download_music(song_info, path))
                 else:
                     asyncio.get_running_loop().call_later(
@@ -580,7 +580,7 @@ class MusicApp(object):
 
     async def _get_mediacontent(self, _id):
         if os.path.exists(
-                path := os.path.join(self.DOWNLOAD_PATH, f'{"_".join(_id)}.m4a')):
+                path := os.path.join(self.DOWNLOAD_PATH, f'{"_".join([*_id.id, _id.app])}.m4a')):
             mediacontent = QMediaContent(QUrl.fromLocalFile(path))
         else:
             url = await self._get_url(_id)
@@ -680,7 +680,7 @@ class MusicApp(object):
 
     async def _get_url(self, _id):
         try:
-            url = await self.musicer[_id[1]]._get_song_url(_id[0])
+            url = await self.musicer[_id.app]._get_song_url(*_id.id)
         except AssertionError as e:
             song = ''
             if _id in self.to_download.values():
@@ -695,6 +695,7 @@ class MusicApp(object):
         except CookieInvalidError as e:
             def call_back(*args):
                 if (e := login_task.exception()) is None:
+                    asyncio.create_task(current_task.get_coro())
                     self.ui.statusBar().showMessage('登录成功！！！')
                     asyncio.get_running_loop().call_later(
                         3, self.ui.statusBar().showMessage,
@@ -705,12 +706,14 @@ class MusicApp(object):
                         self.open_login_dialog()
             self.ui.statusBar().showMessage(
                 f'当前cookie已失效,正在重新登录......')
-            login_task = asyncio.create_task(self.musicer[_id[1]].login())
+            login_task = asyncio.create_task(self.musicer[_id.app].login())
             login_task.add_done_callback(call_back)
-            asyncio.current_task().cancel()
+            (current_task := asyncio.current_task()).cancel()
             await asyncio.sleep(0)
         else:
-            return url
+            if url.vip:
+                QMessageBox.information(self.ui, '提示', 'VIP歌曲,仅提供试听')
+            return url.url
 
     def show(self):
         self.ui.show()
