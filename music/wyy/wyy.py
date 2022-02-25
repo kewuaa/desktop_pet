@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 13:30:14
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-19 22:47:17
+# @Last Modified time: 2022-02-25 15:49:02
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -110,43 +110,36 @@ class Musicer(BaseMusicer):
             'VIP或无版权歌曲，无法播放与下载'
         return SongUrl(url)
 
-    # 存在问题待解决
-    # 登录功能暂时不可使用
-    async def _login(self, login_id, password, **kwargs):
-        # try:
-        url = 'https://music.163.com/weapi/w/register/cellphone?csrf_token='
-        headers = {
-            'accept': '*/*',
-            'cookie': 'JSESSIONID-WYYY=bc%2FcFyviRmSn%2BezbnMZSyzfBvTu4%2B7mmk4%2BA5gscuJiRaVCPRXo%5CbnSOM%2BDHxDd8R62q5AJRo68DoE9xPrE0WFyrx4ihugPCt3lmm%2BMPyr%5CT6B%2FIBfYoajt2z%2Fuf313KDaZStgpy39ZaTra%5CdXp3uDUwl0ZzZolFZmgO0t6yq89WOWak%3A1644898552583; _iuqxldmzr_=32; _ntes_nnid=3fc405557aca62a5ce1c3f80f27d7f50,1644896752640; _ntes_nuid=3fc405557aca62a5ce1c3f80f27d7f50; NMTID=00OfUZQmXLVo9vEdk8eiakVghEnaYkAAAF--3yUWQ; WEVNSM=1.0.0; WNMCID=qvpqnt.1644896752879.01.0; WM_NI=yaQIRYimWYGqn0VrJdhYvxDHIBdWaVNbBSpn1RH9e57JdF5bPoiNlJ3YaFgkxNXkPoXJDV%2FbYvAbgkfyJ0duaWyKlyXPZ28tba%2FVKjpclArgp5AFwBtdi1IdBspOwG%2BDZGk%3D; WM_NIKE=9ca17ae2e6ffcda170e2e6ee85d866ede7fdd0d0638be78ab2d85a868b9faaaa218df5ae82f5449cbb8a86dc2af0fea7c3b92abbbf9faad153abb399bac67baef09a93c970ac87ba99c7448b9eacb8e45e8ebe8eb4f366f38e88dae83ff596aca7b86a94b1a7afef42f187afa7e661bc92988cd3659c968cb7ae6a9baa8f83e661a6a786d1e77fa389b7acef739c9096d3bb80a2bfe1b7ca62b4bda4a2f16db4eb8fa7f64ab8bca7d2cc7082adc0b0f64de99c96a8ea37e2a3; WM_TID=8Mlx%2F8iOyAZBRRVUAFY%2BuP6KLrDDLFKJ; __snaker__id=4AXAnkFvY1B3zC4a; gdxidpyhxdE=AzNIHxaaPlR%2B3pT2BG%2BabQRlNhMsnEn7MiqH5Cd9DrWK%2B%2FPPtoi%5C%2BrMl%2BlsXS6AbSMHOtUPNSMsWd%2F8kSNcuPBzKH2ibyH8YMsX0l39TSSP71yOCOgM6DCBRugGirD3CeXJ%5C9VM14yX7W7XHfYYBNhwy3r%5CSxJa%2FokmEaeyf8s%2FGnbnj%3A1644897670778; _9755xjdesxxd_=32',
-            'origin': 'https://music.163.com',
-            'referer': 'https://music.163.com/',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36',
-        }
-        login_dict = {
-            'phone': login_id,
-            'rememberLogin': 'true',
-            'password': hashlib.md5(password.encode()).hexdigest(),
-            'checkToken': await self.get_checktoken(),
-            'csrf_token': '',
-        }
-        self.DATA['params'] = self.encrypt(json.dumps(login_dict))
-        res = await self.session.post(url, headers=headers, data=self.DATA)
-        result = await res.json(content_type=None)
-        assert result['code'] == 200, result['msg']
-        return {i.key: i.value for i in res.cookies.values()}
-        # finally:
-        #     await self.close()
-        # cookies = self._get_cookie_dict(cookie)
-        # cookies.update({i.key: i.value for i in res.cookies.values()})
-        # cookie_str = self.headers['cookie'] = self._get_cookie_str(cookies)
-        # asyncio.create_task(self._reset_cookie(cookie_str))
+    # # 存在问题待解决
+    # # 登录功能暂时不可使用
+    # async def _login(self, login_id, password, **kwargs):
+    #     url = 'https://music.163.com/weapi/w/register/cellphone?csrf_token='
+    #     headers = {
+    #         'accept': '*/*',
+    #         'cookie': 'JSESSIONID-WYYY=bc%2FcFyviRmSn%2BezbnMZSyzfBvTu4%2B7mmk4%2BA5gscuJiRaVCPRXo%5CbnSOM%2BDHxDd8R62q5AJRo68DoE9xPrE0WFyrx4ihugPCt3lmm%2BMPyr%5CT6B%2FIBfYoajt2z%2Fuf313KDaZStgpy39ZaTra%5CdXp3uDUwl0ZzZolFZmgO0t6yq89WOWak%3A1644898552583; _iuqxldmzr_=32; _ntes_nnid=3fc405557aca62a5ce1c3f80f27d7f50,1644896752640; _ntes_nuid=3fc405557aca62a5ce1c3f80f27d7f50; NMTID=00OfUZQmXLVo9vEdk8eiakVghEnaYkAAAF--3yUWQ; WEVNSM=1.0.0; WNMCID=qvpqnt.1644896752879.01.0; WM_NI=yaQIRYimWYGqn0VrJdhYvxDHIBdWaVNbBSpn1RH9e57JdF5bPoiNlJ3YaFgkxNXkPoXJDV%2FbYvAbgkfyJ0duaWyKlyXPZ28tba%2FVKjpclArgp5AFwBtdi1IdBspOwG%2BDZGk%3D; WM_NIKE=9ca17ae2e6ffcda170e2e6ee85d866ede7fdd0d0638be78ab2d85a868b9faaaa218df5ae82f5449cbb8a86dc2af0fea7c3b92abbbf9faad153abb399bac67baef09a93c970ac87ba99c7448b9eacb8e45e8ebe8eb4f366f38e88dae83ff596aca7b86a94b1a7afef42f187afa7e661bc92988cd3659c968cb7ae6a9baa8f83e661a6a786d1e77fa389b7acef739c9096d3bb80a2bfe1b7ca62b4bda4a2f16db4eb8fa7f64ab8bca7d2cc7082adc0b0f64de99c96a8ea37e2a3; WM_TID=8Mlx%2F8iOyAZBRRVUAFY%2BuP6KLrDDLFKJ; __snaker__id=4AXAnkFvY1B3zC4a; gdxidpyhxdE=AzNIHxaaPlR%2B3pT2BG%2BabQRlNhMsnEn7MiqH5Cd9DrWK%2B%2FPPtoi%5C%2BrMl%2BlsXS6AbSMHOtUPNSMsWd%2F8kSNcuPBzKH2ibyH8YMsX0l39TSSP71yOCOgM6DCBRugGirD3CeXJ%5C9VM14yX7W7XHfYYBNhwy3r%5CSxJa%2FokmEaeyf8s%2FGnbnj%3A1644897670778; _9755xjdesxxd_=32',
+    #         'origin': 'https://music.163.com',
+    #         'referer': 'https://music.163.com/',
+    #         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.82 Safari/537.36',
+    #     }
+    #     login_dict = {
+    #         'phone': login_id,
+    #         'rememberLogin': 'true',
+    #         'password': hashlib.md5(password.encode()).hexdigest(),
+    #         'checkToken': await self.get_checktoken(),
+    #         'csrf_token': '',
+    #     }
+    #     self.DATA['params'] = self.encrypt(json.dumps(login_dict))
+    #     res = await self.session.post(url, headers=headers, data=self.DATA)
+    #     result = await res.json(content_type=None)
+    #     assert result['code'] == 200, result['msg']
+    #     return {i.key: i.value for i in res.cookies.values()}
 
-    async def get_checktoken(self):
-        # self.load_js()
-        proc = await asyncio.create_subprocess_shell(
-            f'node {current_path}/checktoken.js',
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE)
-        stdout, stderr = await proc.communicate()
-        assert not stderr, stderr.decode('gbk')
-        return stdout.decode().strip()
+    # async def get_checktoken(self):
+    #     # self.load_js()
+    #     proc = await asyncio.create_subprocess_shell(
+    #         f'node {current_path}/checktoken.js',
+    #         stdout=asyncio.subprocess.PIPE,
+    #         stderr=asyncio.subprocess.PIPE)
+    #     stdout, stderr = await proc.communicate()
+    #     assert not stderr, stderr.decode('gbk')
+    #     return stdout.decode().strip()

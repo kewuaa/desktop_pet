@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-01-21 18:36:13
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-19 22:44:44
+# @Last Modified time: 2022-02-24 13:32:26
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -695,7 +695,6 @@ class MusicApp(object):
         except CookieInvalidError as e:
             def call_back(*args):
                 if (e := login_task.exception()) is None:
-                    asyncio.create_task(current_task.get_coro())
                     self.ui.statusBar().showMessage('登录成功！！！')
                     asyncio.get_running_loop().call_later(
                         3, self.ui.statusBar().showMessage,
@@ -708,7 +707,7 @@ class MusicApp(object):
                 f'当前cookie已失效,正在重新登录......')
             login_task = asyncio.create_task(self.musicer[_id.app].login())
             login_task.add_done_callback(call_back)
-            (current_task := asyncio.current_task()).cancel()
+            asyncio.current_task().cancel()
             await asyncio.sleep(0)
         else:
             if url.vip:
