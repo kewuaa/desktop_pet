@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-07 00:40:21
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-19 20:59:02
+# @Last Modified time: 2022-02-27 20:04:12
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -42,14 +42,14 @@ except ImportError:
 
 ua = fake_ua.UserAgent('internetexplorer')
 fromstring = AsyncFuncWrapper(fromstring)
-spare_cookie = 'migu_cookie_id=3915f4a1-4229-4cf9-86a3-08d888cbf524-n41644147336766; mg_uem_user_id_9fbe6599400e43a4a58700a822fd57f8=ff8e54d7-2bdf-4f35-89a1-ce1d034e526b; cookieId=LSufmMCmHgdDzcoMKZvYf7LktxsCaeA1644148511436; player_stop_open=0; playlist_adding=1; addplaylist_has=1; audioplayer_new=1; add_play_now=1; audioplayer_exist=1; migu_cn_cookie_id=4ab2782f-7292-4771-b7b4-bdfa43b85de1; Hm_lvt_ec5a5474d9d871cb3d82b846d861979d=1644392873; Hm_lpvt_ec5a5474d9d871cb3d82b846d861979d=1644393538; playlist_change=0; audioplayer_open=0; WT_FPC=id=295807d169ac3b44bf71644147339348:lv=1644745660312:ss=1644745639751; idmpauth=true@passport.migu.cn; migu_music_status=true; migu_music_uid=91557596328; migu_music_avatar=%252F%252Fcdnmusic.migu.cn%252Fv3%252Fstatic%252Fimg%252Fcommon%252Fheader%252Fdefault-avatar.png; migu_music_nickname=%E5%92%AA%E5%92%95%E9%9F%B3%E4%B9%90%E7%94%A8%E6%88%B7; migu_music_level=0; migu_music_credit_level=1; migu_music_platinum=0; migu_music_msisdn=4whtc77PZu2eNxk7wraP0A%3D%3D; migu_music_email=; migu_music_passid=481203608494311587; migu_music_sid=s%3AIJaI88xhuhalB3yYyUgdW0CCEY23ZoDr.Kr63XXew2Otz8meqgukkMlCPngEtwPYu%2Fm7ZUt8PMJ4'
+spare_cookie = 'idmpauth=true@passport.migu.cn; mg_uem_user_id_9fbe6599400e43a4a58700a822fd57f8=9b31b958-c913-4b36-8640-f304a76eca4d; cookieId=OW-j84sttxXsPA7bt_VzncwuQEz7V481644898806097; migu_cookie_id=c7910af6-2669-46cf-8503-482ffd711c79-n41645957215805'
 
 
 class Musicer(BaseMusicer):
     """docstring for Musicer."""
 
-    SEARCH_URL = 'https://music.migu.cn/v3/search?page=1&type=song&i={i}&f=html&s={s}&c=001002A&keyword={keyword}&v=3.22.4'
-    KEY_STR = 'c001002Afhtmlk3915f4a1-4229-4cf9-86a3-08d888cbf524-n41644147336766keyword{keyword}s{s}u{user_agent}/220001v3.22.4'
+    SEARCH_URL = 'https://music.migu.cn/v3/search?page=1&type=song&i={i}&f=html&s={s}&c=001002A&keyword={keyword}&v=3.22.5'
+    KEY_STR = 'c001002Afhtmlkc7910af6-2669-46cf-8503-482ffd711c79-n41645957215805keyword{keyword}s{s}u{user_agent}/220001v3.22.5'
     SONG_URL = 'https://music.migu.cn/v3/api/music/audioPlayer/getPlayInfo?dataType=2&data={}&secKey=ElP1Za4xkAwkmEnBhaswmP%2FcK91dJQEYRVjJSVvQ9PKXL1CrvdcQVQ2MbjtSfy1JMU8o%2FzkTJY2ypU3NWk%2BXf7aYAv93IdJQAJZKmC%2Fe%2B48V2s52iOeCUcFYc9piXHT%2FMlawqSS4bwaqX%2BucR9J1A3XE21rQSkhjPKLXOAhRESc%3D'
     PERSONAL_KEY = '4ea5c508a6566e76240543f8feb06fd457777be39549c4016436afda65d2330e'
     TO_ENCRYP = '{"copyrightId":"%s","type":2,"auditionsFlag":11}'  # type: 标准:1 高品:2 无损:3,至臻:4 3D:5
@@ -57,12 +57,11 @@ class Musicer(BaseMusicer):
     def __init__(self):
         super(Musicer, self).__init__(
             current_path=current_path, cookie=spare_cookie)
-        self._login = self._update_cookie(self._login) 
+        # asyncio.create_task(self.init())
+        self._login = self._update_cookie(self._login)
         self.encode = lambda string: quote(string).replace('/', '%2F').replace('%28', '(').replace('%29', ')')
 
     # async def init(self):
-    #     async with self.session.get('https://music.migu.cn/') as res:
-    #         assert res.status == 200
     #     headers = {
     #         'user-agent': ua.get_ua(),
     #         'referer': 'https://music.migu.cn/',
@@ -70,10 +69,11 @@ class Musicer(BaseMusicer):
     #     url = 'https://passport.migu.cn/popup/login?sourceid=220001&callbackURL=https%3A%2F%2Fmusic.migu.cn%2Fv3'
     #     async with self.session.get(URL(url, encoded=True), headers=headers) as res:
     #         assert res.status == 200
+    #     print(res.cookies)
     #     await self.login()
-        # print(dir(self.session.cookie_jar._cookies))
-        # print(self.session.cookie_jar._cookies)
-        # print(help(self.session.cookie_jar.update_cookies))
+    #     print(dir(self.session.cookie_jar._cookies))
+    #     print(self.session.cookie_jar._cookies)
+    #     print(help(self.session.cookie_jar.update_cookies))
 
     async def _get_song_info(self, song):
         keyword = quote(song)

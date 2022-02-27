@@ -2,8 +2,9 @@
 # @Author: kewuaa
 # @Date:   2022-02-11 15:15:54
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-19 20:36:17
+# @Last Modified time: 2022-02-27 16:29:43
 from collections import namedtuple
+from inspect import signature
 from functools import wraps
 from http.cookies import SimpleCookie
 import os
@@ -22,10 +23,6 @@ class HZYErr(Exception):
     pass
 
 
-class FuncInvalidError(HZYErr):
-    pass
-
-
 class CookieInvalidError(HZYErr):
     pass
 
@@ -35,6 +32,10 @@ class LackLoginArgsError(HZYErr):
 
 
 class LackCookieError(HZYErr):
+    pass
+
+
+class LoginIncompleteError(HZYErr):
     pass
 
 
@@ -109,6 +110,8 @@ class BaseMusicer(object):
                         if len(item := line.strip().split('=', 1)) > 1}
 
     async def login(self):
+        if signature(self._login).parameters.get('unprepare', False):
+            raise LoginIncompleteError
         if (login_args := await self._load_setting()) is not None:
             assert 'login_id' in login_args and 'password' in login_args,\
                 'setting文件格式有误'
@@ -117,7 +120,7 @@ class BaseMusicer(object):
         await self._login(**login_args)
 
     async def _login(self, unprepare=None, **kwargs):
-        raise FuncInvalidError
+        pass
 
     async def reset_setting(self, **kwargs):
         assert 'login_id' in kwargs and 'password' in kwargs
