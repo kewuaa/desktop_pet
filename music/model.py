@@ -2,12 +2,14 @@
 # @Author: kewuaa
 # @Date:   2022-02-11 15:15:54
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-28 15:47:30
+# @Last Modified time: 2022-02-28 20:17:25
 from collections import namedtuple
 from inspect import signature
 from functools import wraps
 from http.cookies import SimpleCookie
+from random import sample
 import os
+import string
 import base64
 import asyncio
 
@@ -68,7 +70,9 @@ class BaseMusicer(object):
         return self.sess
 
     def _load_js(self, js: str):
-        async def load_js(name: str):
+        async def load_js(name: str = None) -> str:
+            if name is None:
+                name = self._get_random_name()
             if not os.path.exists(
                     path := os.path.join(self.current_path, f'{name}.js')):
                 async with aiofile.open_async(
@@ -76,11 +80,16 @@ class BaseMusicer(object):
                     b64content = js.encode()
                     content = base64.b64decode(b64content)
                     await f.write(content)
+            return path
         return load_js
 
-    async def _get_popen_result(self, name: str) -> str:
+    @staticmethod
+    def _get_random_name() -> str:
+        return ''.join(sample(string.ascii_letters + string.digits, 3 * 3))
+
+    async def _get_popen_result(self, path: str) -> str:
         proc = await asyncio.create_subprocess_shell(
-            f'node {self.current_path}/{name}.js',
+            f'node {path}',
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
@@ -117,21 +126,22 @@ class BaseMusicer(object):
                         for line in await f.readlines()
                         if len(item := line.strip().split('=', 1)) > 1}
 
-    async def login(self):
+    async def login(self, **login_args):
         if signature(self._login).parameters.get('unprepare', False):
             raise LoginIncompleteError
-        if (login_args := await self._load_setting()) is not None:
-            assert 'login_id' in login_args and 'password' in login_args,\
-                'setting文件格式有误'
-        else:
-            raise LackLoginArgsError('尚未存在登录信息')
+        if not login_args:
+            if (login_args := await self._load_setting()) is not None:
+                assert 'login_id' in login_args and 'password' in login_args,\
+                    'setting文件格式有误'
+            else:
+                raise LackLoginArgsError('尚未存在登录信息')
         await self._login(**login_args)
+        return login_args
 
-    async def _login(self, unprepare=None, **kwargs):
-        pass
+    async def _login(self, unprepare=None):
+        raise RuntimeError('unprepare')
 
     async def reset_setting(self, **kwargs):
-        assert 'login_id' in kwargs and 'password' in kwargs
         async with aiofile.open_async(
                 os.path.join(self.current_path, 'setting'), 'w') as f:
             for k, v in kwargs.items():

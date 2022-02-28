@@ -172,6 +172,11 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addWidget(self.downloadtoolButton)
 
+        self.logintoolButton = QToolButton(self.widget_4)
+        self.logintoolButton.setObjectName(u"logintoolButton")
+
+        self.horizontalLayout_2.addWidget(self.logintoolButton)
+
         self.hideandshowpushButton = QPushButton(self.widget_4)
         self.hideandshowpushButton.setObjectName(u"hideandshowpushButton")
 
@@ -233,6 +238,7 @@ class Ui_MainWindow(object):
         self.nextpushButton.setText("")
         self.modepushButton.setText("")
         self.downloadtoolButton.setText(QCoreApplication.translate("MainWindow", u"...", None))
+        self.logintoolButton.setText(QCoreApplication.translate("MainWindow", u"...", None))
         self.hideandshowpushButton.setText("")
         self.downloadgroupBox.setTitle(QCoreApplication.translate("MainWindow", u"\u4e0b\u8f7d\u5217\u8868", None))
         self.menu.setTitle(QCoreApplication.translate("MainWindow", u"\u8bbe\u7f6e", None))

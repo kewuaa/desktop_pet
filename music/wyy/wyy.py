@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 13:30:14
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-28 16:25:54
+# @Last Modified time: 2022-02-28 18:28:17
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -10,9 +10,7 @@ if __name__ == '__main__':
     sys.path.append(os.path.join(current_path, '..'))
     sys.path.append(os.path.join(current_path, '../..'))
 
-from random import sample
 import json
-import string
 import base64
 import hashlib
 import asyncio
@@ -134,12 +132,7 @@ class Musicer(BaseMusicer):
         return {i.key: i.value for i in res.cookies.values()}
 
     async def get_checktoken(self):
-        name = self._get_random_name()
-        await self.load_js(name)
+        path = await self.load_js()
         asyncio.current_task().add_done_callback(
-            lambda x: os.remove(f'{self.current_path}/{name}.js'))
-        return await self._get_popen_result(name)
-
-    @staticmethod
-    def _get_random_name() -> str:
-        return ''.join(sample(string.ascii_letters + string.digits, 3 * 3))
+            lambda x: os.remove(path))
+        return await self._get_popen_result(path)

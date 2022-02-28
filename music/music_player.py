@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-01-21 18:36:13
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-27 20:09:25
+# @Last Modified time: 2022-02-28 22:01:04
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -185,30 +185,16 @@ class MusicApp(object):
             def __init__(self, title):
                 super(LoginUi, self).__init__()
                 self.setupUi(self)
+                self._login_args = None
                 self.setWindowModality(Qt.ApplicationModal)
-                self.app = app.MAP[title]
                 self.setWindowTitle(f'登录{title}音乐')
                 self.numbers = {str(i) for i in range(10)}
                 self.messagelabel.setAlignment(Qt.AlignCenter)
                 self.messagelabel.setStyleSheet("color:red")
 
-            def login(self, login_id, password):
-                def call_back(*args):
-                    if (e := login_task.exception()) is None:
-                        asyncio.create_task(
-                            musicer.reset_setting(
-                                login_id=login_id, password=password))
-                        app.ui.statusBar().showMessage('登录成功')
-                        asyncio.get_running_loop().call_later(
-                            3, app.ui.statusBar().showMessage,
-                            f'当前下载路径: {app.DOWNLOAD_PATH}')
-                    else:
-                        QMessageBox.warning(app.ui, '警告', str(e))
-                musicer = app.musicer[self.app]
-                (login_task := asyncio.create_task(
-                    musicer._login(
-                        login_id=login_id,
-                        password=password))).add_done_callback(call_back)
+            @property
+            def login_args(self):
+                return self._login_args
 
             def accept(self):
                 message = ''
@@ -221,11 +207,11 @@ class MusicApp(object):
                 if message:
                     self.messagelabel.setText(message)
                 else:
-                    self.login(login_id, password)
+                    self._login_args = {'login_id': login_id, 'password': password}
                     super(LoginUi, self).accept()
         self.login_dialog = LoginUi
 
-    def login(self, app=None):
+    def login(self, app=None, **login_args):
         def call_back(*args):
             if (e := login_task.exception()) is None:
                 self.ui.statusBar().showMessage('登录成功！！！')
@@ -235,21 +221,30 @@ class MusicApp(object):
             else:
                 if isinstance(e, LoginIncompleteError):
                     QMessageBox.information(self.ui, '提示', '暂未实现该平台的登录功能')
-                elif isinstance(e, LackLoginArgsError):
-                    QMessageBox.information(self.ui, '提示', '未存在登录信息,请登录')
-                    self.open_login_dialog(title)
                 else:
-                    QMessageBox.warning(
-                        self.ui, '警告', '\n'.join([str(e), '请尝试重新登陆账号密码']))
+                    if isinstance(e, LackLoginArgsError):
+                        QMessageBox.information(self.ui, '提示', '未存在登录信息,请登录')
+                    else:
+                        QMessageBox.warning(
+                            self.ui, '警告', '\n'.join([str(e), '请尝试重新登陆账号密码']))
                     self.open_login_dialog(title)
         title = self.ui.musicercomboBox.currentText()
         if app is None:
             app = self.MAP[title]
         (login_task := asyncio.create_task(
-            self.musicer[app].login())).add_done_callback(call_back)
+            self.musicer[app].login(**login_args))).add_done_callback(call_back)
+        return login_task
 
-    def open_login_dialog(self, title):
-        self.login_dialog(title).exec_()
+    def open_login_dialog(self, title=None):
+        def call_back(*args):
+            if login_task.exception() is None:
+                asyncio.create_task(
+                    self.musicer[self.MAP[title]].reset_setting(**login_args))
+        if title is None:
+            title = self.ui.musicercomboBox.currentText()
+        (dialog := self.login_dialog(title)).exec_()
+        if (login_args := dialog.login_args) is not None:
+            (login_task := self.login(**login_args)).add_done_callback(call_back)
 
     def initUi(self):
         self.init_login_dialog()
@@ -285,12 +280,14 @@ class MusicApp(object):
         self.layout = QVBoxLayout()
         widget = QWidget()
         widget.setLayout(self.layout)
-        self.menu = QMenu()
-        self.login_action = QAction('登录', triggered=self.login)
+        self.download_menu = QMenu()
+        self.login_menu = QMenu()
         self.change_download_path_action = QAction(
-            '改变下载路径', triggered=self.change_download_path)
-        self.menu.addAction(self.login_action)
-        self.menu.addAction(self.change_download_path_action)
+            '更换下载路径', triggered=self.change_download_path)
+        self.switch_account_action = QAction(
+            '切换账号', triggered=self.open_login_dialog)
+        self.download_menu.addAction(self.change_download_path_action)
+        self.login_menu.addAction(self.switch_account_action)
         self.ui.resultscrollArea.setWidget(widget)
         self.ui.voicepushButton.clicked.connect(self.mute)
         self.ui.playpushButton.clicked.connect(self.play_pause)
@@ -302,7 +299,9 @@ class MusicApp(object):
         self.ui.modepushButton.clicked.connect(self.change_mode())
         self.ui.modepushButton.setEnabled(False)
         self.ui.downloadtoolButton.clicked.connect(self.download)
-        self.ui.downloadtoolButton.setMenu(self.menu)
+        self.ui.downloadtoolButton.setMenu(self.download_menu)
+        self.ui.logintoolButton.clicked.connect(lambda: self.login())
+        self.ui.logintoolButton.setMenu(self.login_menu)
         self.ui.hideandshowpushButton.clicked.connect(self.hide_and_show)
         self.ui.listenlistView.setModel(self.listen_slm)
         self.ui.listenlistView.doubleClicked.connect(self.list_play)
@@ -350,6 +349,7 @@ class MusicApp(object):
             self.ui.lastpushButton.setToolTip('<b>上一曲</b>')
             self.ui.modepushButton.setToolTip('<b>列表循环</b>')
             self.ui.downloadtoolButton.setToolTip('<b>下载</b>')
+            self.ui.logintoolButton.setToolTip('<b>登录</b>')
             self.ui.hideandshowpushButton.setToolTip('<b>展开下载列表</b>')
             self.ui.voicehorizontalSlider.setToolTip(f'<b>{self.voice}</b>')
             self.add_icon = self._get_icon(add_py)
@@ -373,9 +373,10 @@ class MusicApp(object):
             self.ui.lastpushButton.setIcon(self._get_icon(previous_py))
             self.ui.modepushButton.setIcon(list_loop_icon)
             self.ui.downloadtoolButton.setIcon(self._get_icon(download_py))
+            self.ui.logintoolButton.setIcon(self._get_icon(login_py))
             self.ui.action_bat.setIcon(self.export_icon)
-            self.login_action.setIcon(self._get_icon(login_py))
             self.change_download_path_action.setIcon(self._get_icon(download_path_setting_py))
+            self.switch_account_action.setIcon(self._get_icon(switch_py))
         await asyncio.get_running_loop().run_in_executor(None, add_style_func)
 
     def listen_listview_contextmenu(self, pos):
