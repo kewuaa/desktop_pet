@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-11 15:15:54
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-27 16:29:43
+# @Last Modified time: 2022-02-28 15:47:30
 from collections import namedtuple
 from inspect import signature
 from functools import wraps
@@ -72,12 +72,20 @@ class BaseMusicer(object):
             if not os.path.exists(
                     path := os.path.join(self.current_path, f'{name}.js')):
                 async with aiofile.open_async(
-                        path, 'w') as f:
+                        path, 'wb') as f:
                     b64content = js.encode()
                     content = base64.b64decode(b64content)
-                    await f.write(content.decode())
-            self.js_path = path
+                    await f.write(content)
         return load_js
+
+    async def _get_popen_result(self, name: str) -> str:
+        proc = await asyncio.create_subprocess_shell(
+            f'node {self.current_path}/{name}.js',
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE)
+        stdout, stderr = await proc.communicate()
+        assert not stderr, stderr.decode('gbk')
+        return stdout.decode().strip()
 
     async def _load_cookie(self):
         if os.path.exists(path := os.path.join(self.current_path, 'cookie')):
