@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 13:30:14
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-28 16:04:05
+# @Last Modified time: 2022-02-28 16:25:54
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -113,8 +113,6 @@ class Musicer(BaseMusicer):
             'VIP或无版权歌曲，无法播放与下载'
         return SongUrl(url)
 
-    # 存在问题待解决
-    # 登录功能暂时不可使用
     async def _login(self, login_id, password, **kwargs):
         url = 'https://music.163.com/weapi/w/login/cellphone?csrf_token='
         headers = {
