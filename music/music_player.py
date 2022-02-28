@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-01-21 18:36:13
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-28 22:01:04
+# @Last Modified time: 2022-02-28 22:06:07
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -226,7 +226,7 @@ class MusicApp(object):
                         QMessageBox.information(self.ui, '提示', '未存在登录信息,请登录')
                     else:
                         QMessageBox.warning(
-                            self.ui, '警告', '\n'.join([str(e), '请尝试重新登陆账号密码']))
+                            self.ui, '警告', '\n'.join([str(e), '请尝试重新登陆']))
                     self.open_login_dialog(title)
         title = self.ui.musicercomboBox.currentText()
         if app is None:

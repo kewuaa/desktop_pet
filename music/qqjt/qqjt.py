@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-17 09:15:39
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-19 21:01:09
+# @Last Modified time: 2022-02-28 22:29:39
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -102,12 +102,7 @@ class Musicer(BaseMusicer):
         url = f'https://music.taihe.com/v1/oauth/login/password?sign={sign}&timestamp={time_stamp}'
         res = await self.session.post(url, headers=headers, data=data)
         result = await res.json(content_type=None)
-        print(result)
         assert not (errmsg := result['errmsg']), errmsg
         data = result['data']
         data.pop('expires_in')
         return data
-        # cookies = self._get_cookie_dict(self.headers['cookie'])
-        # cookies.update(data)
-        # cookie_str = self.headers['cookie'] = self._get_cookie_str(cookies)
-        # asyncio.create_task(self._reset_cookie(cookie_str))

@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-07 00:40:21
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-27 20:04:12
+# @Last Modified time: 2022-02-28 22:05:03
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -149,7 +149,7 @@ class Musicer(BaseMusicer):
         }
         res = await self.session.post(url, headers=headers, data=data)
         result = await res.json(content_type=None)
-        assert result['status'] == 2000, '登录失败'
+        assert result['status'] == 2000, result['message']
         token = result['result']['token']
         async with self.session.get(URL(f'https://music.migu.cn/v3/user/login?callbackURL=https%3A%2F%2Fmusic.migu.cn%2Fv3&relayState=&token={token}',
                                         encoded=True),
