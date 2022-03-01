@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 16:17:25
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-19 20:29:46
+# @Last Modified time: 2022-03-01 08:16:22
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -38,9 +38,9 @@ spare_cookie = 'kg_mid=f5cc0826aa228ba869e92dc2f7501c9c; kg_dfid=1JdqSp27zyLa3wr
 class Musicer(BaseMusicer):
     """docstring for Musicer."""
 
-    SEARCH_URL = 'https://complexsearch.kugou.com/v2/search/song?callback=callback123&keyword={song}&page=1&pagesize=20&bitrate=0&isfuzzy=0&tag=em&inputtype=0&platform=WebFilter&userid=943077582&clientver=2000&iscorrection=1&privilege_filter=0&token=1d8ad00b0dedb733bed729be875518669c98f5ab075e95cf334daffb9b39491b&srcappid=2919&clienttime={time}&mid={time}&uuid={time}&dfid=-&signature={signature}'
-    SONG_URL = 'https://wwwapi.kugou.com/yy/index.php?r=play/getdata&callback=jQuery19103812022462601341_1644030495674&hash={filehash}&dfid=1JdqSp27zyLa3wraVj18xXYA&appid=1014&mid=f5cc0826aa228ba869e92dc2f7501c9c&platid=4&album_id={album_id}&_=1644030495675'
-    STR = 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwtbitrate=0callback=callback123clienttime={time}clientver=2000dfid=-inputtype=0iscorrection=1isfuzzy=0keyword={song}mid={time}page=1pagesize=20platform=WebFilterprivilege_filter=0srcappid=2919tag=emtoken=1d8ad00b0dedb733bed729be875518669c98f5ab075e95cf334daffb9b39491buserid=943077582uuid={time}NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt'
+    SEARCH_URL = 'https://complexsearch.kugou.com/v2/search/song?callback=callback123&keyword={song}&page=1&pagesize=20&bitrate=0&isfuzzy=0&tag=em&inputtype=0&platform=WebFilter&userid=943077582&clientver=2000&iscorrection=1&privilege_filter=0&token=1d8ad00b0dedb733bed729be875518669c98f5ab075e95cf334daffb9b39491b&srcappid=2919&clienttime={time_stamp}&mid={time_stamp}&uuid={time_stamp}&dfid=-&signature={signature}'
+    SONG_URL = 'https://wwwapi.kugou.com/yy/index.php?r=play/getdata&callback=jQuery19103812022462601341_1644030495674&hash={filehash}&dfid=1JdqSp27zyLa3wraVj18xXYA&appid=1014&mid=f5cc0826aa228ba869e92dc2f7501c9c&platid=4&album_id={album_id}&_={time_stamp}'
+    STR = 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwtbitrate=0callback=callback123clienttime={time_stamp}clientver=2000dfid=-inputtype=0iscorrection=1isfuzzy=0keyword={song}mid={time_stamp}page=1pagesize=20platform=WebFilterprivilege_filter=0srcappid=2919tag=emtoken=1d8ad00b0dedb733bed729be875518669c98f5ab075e95cf334daffb9b39491buserid=943077582uuid={time_stamp}NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt'
 
     def __init__(self):
         super(Musicer, self).__init__(
@@ -53,10 +53,10 @@ class Musicer(BaseMusicer):
         self.headers['user-agent'] = ua.get_ua()
         time_stamp = int(time.time() * 1000)
         signature = hashlib.md5(
-            self.STR.format(time=time_stamp, song=song).encode()).hexdigest().upper()
+            self.STR.format(time_stamp=time_stamp, song=song).encode()).hexdigest().upper()
         res = await self.session.get(
             self.SEARCH_URL.format(
-                time=time_stamp, song=quote(song), signature=signature),
+                time_stamp=time_stamp, song=quote(song), signature=signature),
             headers=self.headers)
         assert (status := res.status) == 200, f'response: {status}'
         result = await res.text()
@@ -81,8 +81,9 @@ class Musicer(BaseMusicer):
     async def _request(
             self, album_id: str, filehash: str) -> dict:
         self.headers['user-agent'] = ua.get_ua()
+        time_stamp = int(time.time() * 1000)
         res = await self.session.get(
-            self.SONG_URL.format(filehash=filehash, album_id=album_id),
+            self.SONG_URL.format(filehash=filehash, album_id=album_id, time_stamp=time_stamp),
             headers=self.headers)
         assert (status := res.status) == 200, f'response: {status}'
         result = await res.text()
