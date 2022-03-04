@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-03-03 12:52:16
 # @Last Modified by:   None
-# @Last Modified time: 2022-03-04 15:50:45
+# @Last Modified time: 2022-03-04 18:58:07
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -115,7 +115,7 @@ class Musicer(BaseMusicer):
         self._login = self._update_cookie(self._login)
         self._verify_img = None
         self._verify_token = None
-        self.sub = re.compile(r'(?<=kw_token=)\w{10}')
+        self.sub = re.compile(r'(?<=kw_token=)\w*?(?=;|$)')
 
     async def _get_song_info(self, song, retry_num=3):
         keyword = quote(song)
@@ -125,12 +125,10 @@ class Musicer(BaseMusicer):
             self.SEARCH_URL.format(keyword=keyword,
                                    reqid=(reqid := get_reqid())),
             headers=self.headers)
+        self._change_token(res.cookies)
         if (status := res.status) > 400 and retry_num:
-            print('retry')
             return await self._get_song_info(song, retry_num=retry_num - 1)
         assert status == 200, f'response: {status}'
-        asyncio.current_task().add_done_callback(
-            partial(self._change_token, res.cookies))
         result_dict = await res.json(content_type=None)
         assert result_dict.get('success') is None, result_dict['message']
         songs = result_dict['data']['list']
@@ -142,24 +140,24 @@ class Musicer(BaseMusicer):
 
     async def _get_song_url(self, _id, retry_num=3):
         self.headers['user-agent'] = ua.get_ua()
+        self.headers['csrf'] = self.sub.search(self.headers['Cookie']).group()
         res = await self.session.get(
             self.SONG_URL.format(rid=_id, reqid=get_reqid()),
             headers=self.headers)
+        self._change_token(res.cookies)
         if (status := res.status) > 400 and retry_num:
-            print('retry')
             return await self._get_song_url(_id, retry_num=retry_num - 1)
         assert status == 200, f'response: {status}'
-        asyncio.current_task().add_done_callback(
-            partial(self._change_token, res.cookies))
         result_dict = await res.json(content_type=None)
         assert result_dict['code'] == 200, result_dict['msg']
         return SongUrl(result_dict['data']['url'])
 
     def _change_token(self, res_cookie, *args):
-        kw_token = [i.value
-                    for i in res_cookie.values()
-                    if i.key == 'kw_token']
-        self.headers['Cookie'] = self.sub.sub(kw_token, self.headers['Cookie'])
+        if res_cookie:
+            kw_token = [i.value
+                        for i in res_cookie.values()
+                        if i.key == 'kw_token'][0]
+            self.headers['Cookie'] = self.sub.sub(kw_token, self.headers['Cookie'])
 
     async def _verify(self):
         url = f'https://www.kuwo.cn/api/common/captcha/getcode?reqId={get_reqid()}&httpsStatus=1'
@@ -202,6 +200,5 @@ class Musicer(BaseMusicer):
         }
         res = await self.session.post(url, headers=headers, data=json.dumps(data))
         result_dict = await res.json(content_type=None)
-        # print(result_dict)
         assert result_dict['code'] == 200, result_dict['msg']
         return result_dict['data']['cookies']

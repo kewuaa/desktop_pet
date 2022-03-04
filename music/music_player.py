@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-01-21 18:36:13
 # @Last Modified by:   None
-# @Last Modified time: 2022-03-04 15:53:13
+# @Last Modified time: 2022-03-04 18:49:45
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -707,6 +707,8 @@ class MusicApp(object):
             songs_info = await self.musicer[musicer]._get_song_info(song)
         except AssertionError as e:
             QMessageBox.critical(self.ui, '错误', str(e))
+            self.current_search = None
+            self.current_musicer = None
             self.ui.inputlineEdit.clear()
         else:
             for song_info in songs_info:
