@@ -53,28 +53,7 @@
               <widget class="QWidget" name="widget_2" native="true">
                <layout class="QHBoxLayout" name="horizontalLayout">
                 <item>
-                 <widget class="QComboBox" name="musicercomboBox">
-                  <item>
-                   <property name="text">
-                    <string>咪咕</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>网易云</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>千千静听</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>酷狗</string>
-                   </property>
-                  </item>
-                 </widget>
+                 <widget class="QComboBox" name="musicercomboBox"/>
                 </item>
                 <item>
                  <widget class="QLineEdit" name="inputlineEdit"/>

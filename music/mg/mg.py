@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-07 00:40:21
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-28 22:05:03
+# @Last Modified time: 2022-03-04 15:51:30
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -55,8 +55,8 @@ class Musicer(BaseMusicer):
     TO_ENCRYP = '{"copyrightId":"%s","type":2,"auditionsFlag":11}'  # type: 标准:1 高品:2 无损:3,至臻:4 3D:5
 
     def __init__(self):
-        super(Musicer, self).__init__(
-            current_path=current_path, cookie=spare_cookie)
+        super(Musicer, self).__init__(current_path=current_path)
+        self.headers['cookie'] = spare_cookie
         # asyncio.create_task(self.init())
         self._login = self._update_cookie(self._login)
         self.encode = lambda string: quote(string).replace('/', '%2F').replace('%28', '(').replace('%29', ')')

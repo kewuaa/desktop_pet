@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-17 09:15:39
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-28 22:29:39
+# @Last Modified time: 2022-03-04 15:51:11
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -42,8 +42,8 @@ class Musicer(BaseMusicer):
     SONG_KEY = 'TSID={TSID}&appid=16073360&timestamp={time_stamp}%s' % SECRET
 
     def __init__(self):
-        super(Musicer, self).__init__(
-            current_path=current_path, cookie=spare_cookie)
+        super(Musicer, self).__init__(current_path=current_path)
+        self.headers['cookie'] = spare_cookie
         self.headers['referer'] = 'https://music.taihe.com/'
         self._login = self._update_cookie(self._login)
 
@@ -63,7 +63,7 @@ class Musicer(BaseMusicer):
         return [SongInfo(f'千千静听: {song["title"]}-->{song["artist"][0]["name"]}-->《{song["albumTitle"]}》',
                          SongID((song['TSID'],), 'qqjt'),
                          os.path.split(pic_url := song['pic'])[1],
-                         pic_url) 
+                         pic_url)
                 for song in songs]
 
     async def _get_song_url(self, _id):

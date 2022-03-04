@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 13:30:14
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-28 18:28:17
+# @Last Modified time: 2022-03-04 15:50:26
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -74,7 +74,8 @@ class Musicer(BaseMusicer):
 
     def __init__(self):
         super(Musicer, self).__init__(
-            current_path=current_path, cookie=spare_cookie, js=CHECKTOKEN_JS)
+            current_path=current_path,  js=CHECKTOKEN_JS)
+        self.headers['cookie'] = spare_cookie
         self.headers['referer'] = 'https://music.163.com/'
         self._login = self._update_cookie(self._login)
 
@@ -127,12 +128,12 @@ class Musicer(BaseMusicer):
         }
         self.DATA['params'] = self.encrypt(json.dumps(login_dict))
         res = await self.session.post(url, headers=headers, data=self.DATA)
-        result = await res.json(content_type=None)
-        assert result['code'] == 200, result['msg']
+        result_dict = await res.json(content_type=None)
+        assert result_dict['code'] == 200, result_dict.get('msg') or '登录失败'
         return {i.key: i.value for i in res.cookies.values()}
 
     async def get_checktoken(self):
         path = await self.load_js()
         asyncio.current_task().add_done_callback(
             lambda x: os.remove(path))
-        return await self._get_popen_result(path)
+        return await self._get_popen_result(f'node {path}')

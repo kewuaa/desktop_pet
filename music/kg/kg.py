@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-04 16:17:25
 # @Last Modified by:   None
-# @Last Modified time: 2022-03-01 08:16:22
+# @Last Modified time: 2022-03-04 15:51:54
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -43,8 +43,8 @@ class Musicer(BaseMusicer):
     STR = 'NVPh5oo715z5DIWAeQlhMDsWXXQV4hwtbitrate=0callback=callback123clienttime={time_stamp}clientver=2000dfid=-inputtype=0iscorrection=1isfuzzy=0keyword={song}mid={time_stamp}page=1pagesize=20platform=WebFilterprivilege_filter=0srcappid=2919tag=emtoken=1d8ad00b0dedb733bed729be875518669c98f5ab075e95cf334daffb9b39491buserid=943077582uuid={time_stamp}NVPh5oo715z5DIWAeQlhMDsWXXQV4hwt'
 
     def __init__(self):
-        super(Musicer, self).__init__(
-            current_path=current_path, cookie=spare_cookie)
+        super(Musicer, self).__init__(current_path=current_path)
+        self.headers['cookie'] = spare_cookie
         self.headers['referer'] = 'https://www.kugou.com/'
         self.match = re.compile('.*?\(([\\s\\S]*)\)')
         self._id_map = {}

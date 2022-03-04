@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-11 15:15:54
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-28 20:17:25
+# @Last Modified time: 2022-03-04 15:56:31
 from collections import namedtuple
 from inspect import signature
 from functools import wraps
@@ -19,6 +19,7 @@ from aiohttp import ClientSession
 SongInfo = namedtuple('SongInfo', ['text', 'id', 'pic', 'pic_url'])
 SongUrl = namedtuple('SongUrl', ['url', 'vip'], defaults=(False,))
 SongID = namedtuple('SongID', ['id', 'app'])
+random_string = string.ascii_letters + string.digits
 
 
 class HZYErr(Exception):
@@ -33,11 +34,11 @@ class LackLoginArgsError(HZYErr):
     pass
 
 
-class LackCookieError(HZYErr):
+class LoginIncompleteError(HZYErr):
     pass
 
 
-class LoginIncompleteError(HZYErr):
+class VerifyError(HZYErr):
     pass
 
 
@@ -45,12 +46,12 @@ class BaseMusicer(object):
     """basic of all musicer."""
 
     def __init__(
-            self, *, js: str = None, current_path: str, cookie: str):
+            self, *, js: str = None, current_path: str, verify=False):
         super(BaseMusicer, self).__init__()
         self.headers = {}
         self.sess = ClientSession()
         self.current_path = current_path
-        self.spare_cookie = cookie
+        self._need_verify = verify
         self._add_cookie()
         if js is not None:
             self.load_js = self._load_js(js)
@@ -61,13 +62,20 @@ class BaseMusicer(object):
 
     @staticmethod
     def _get_cookie_str(cookie_dict: dict) -> str:
-        return '; '.join('='.join(item) for item in cookie_dict.items())
+        return '; '.join('='.join(str(i) for i in item) for item in cookie_dict.items())
 
     @property
     def session(self):
         if self.sess.closed:
             self.sess = ClientSession()
         return self.sess
+
+    def verify(self):
+        if self._need_verify:
+            return asyncio.create_task(self._verify())
+
+    async def _verify(self):
+        pass
 
     def _load_js(self, js: str):
         async def load_js(name: str = None) -> str:
@@ -85,11 +93,11 @@ class BaseMusicer(object):
 
     @staticmethod
     def _get_random_name() -> str:
-        return ''.join(sample(string.ascii_letters + string.digits, 3 * 3))
+        return ''.join(sample(random_string, 3 * 3))
 
-    async def _get_popen_result(self, path: str) -> str:
+    async def _get_popen_result(self, cmd: str) -> str:
         proc = await asyncio.create_subprocess_shell(
-            f'node {path}',
+            cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
@@ -100,16 +108,12 @@ class BaseMusicer(object):
         if os.path.exists(path := os.path.join(self.current_path, 'cookie')):
             async with aiofile.open_async(path, 'r') as f:
                 return await f.read()
-        else:
-            raise LackCookieError
 
     def _add_cookie(self):
         def update(*args):
-            if (e := load_cookie_task.exception()) is None:
-                cookie = load_cookie_task.result()
-            else:
-                cookie = self.spare_cookie
-            self.headers.update({'cookie': cookie})
+            if (cookie := load_cookie_task.result()) is not None:
+                self.headers.update(
+                    {'cookie' if 'cookie' in self.headers else 'Cookie': cookie})
         load_cookie_task = asyncio.create_task(self._load_cookie())
         load_cookie_task.add_done_callback(update)
 
@@ -142,6 +146,8 @@ class BaseMusicer(object):
         raise RuntimeError('unprepare')
 
     async def reset_setting(self, **kwargs):
+        if 'verify_code' in kwargs:
+            kwargs.pop('verify_code')
         async with aiofile.open_async(
                 os.path.join(self.current_path, 'setting'), 'w') as f:
             for k, v in kwargs.items():
@@ -156,9 +162,10 @@ class BaseMusicer(object):
         @wraps(login_func)
         async def _login(*args, **kwargs):
             new_cookie = await login_func(*args, **kwargs)
-            cookies = self._get_cookie_dict(self.headers['cookie'])
+            cookies = self._get_cookie_dict(
+                self.headers.get((c := 'cookie'), self.headers[(c := 'Cookie')]))
             cookies.update(new_cookie)
-            cookie_str = self.headers['cookie'] = self._get_cookie_str(cookies)
+            cookie_str = self.headers[c] = self._get_cookie_str(cookies)
             asyncio.create_task(self._reset_cookie(cookie_str))
         return _login
 

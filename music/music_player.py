@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-01-21 18:36:13
 # @Last Modified by:   None
-# @Last Modified time: 2022-02-28 22:06:07
+# @Last Modified time: 2022-03-04 15:53:13
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -12,6 +12,7 @@ if __name__ == '__main__':
 from io import BytesIO
 from inspect import signature
 from collections.abc import Coroutine
+import json
 import pickle
 import base64
 import asyncio
@@ -51,10 +52,12 @@ try:
     from model import CookieInvalidError
     from model import LackLoginArgsError
     from model import LoginIncompleteError
+    from model import VerifyError
     from pictures import *
     from wyy import wyy
     from kg import kg
     from mg import mg
+    from kw import kw
     from qqjt import qqjt
     from ui_login import Ui_Dialog
     from ui_music_player import Ui_MainWindow
@@ -62,10 +65,12 @@ except ImportError:
     from .model import CookieInvalidError
     from .model import LackLoginArgsError
     from .model import LoginIncompleteError
+    from .model import VerifyError
     from .pictures import *
     from .wyy import wyy
     from .kg import kg
     from .mg import mg
+    from .kw import kw
     from .qqjt import qqjt
     from .ui_login import Ui_Dialog
     from .ui_music_player import Ui_MainWindow
@@ -131,7 +136,13 @@ class MusicApp(object):
     IMG_PATH = os.path.join(DATA_PATH, 'images')
     DOWNLOAD_PATH = os.path.join(DATA_PATH, 'musics')
     SAVE_PATH = os.path.join(DATA_PATH, 'listen')
-    MAP = {'网易云': 'wyy', '酷狗': 'kg', '咪咕': 'mg', '千千静听': 'qqjt'}
+    MAP = {
+        '咪咕': 'mg',
+        '千千': 'qqjt',
+        '网易云': 'wyy',
+        '酷我': 'kw',
+        '酷狗': 'kg'
+    }
 
     def __init__(self):
         super(MusicApp, self).__init__()
@@ -154,6 +165,7 @@ class MusicApp(object):
             'kg': kg.Musicer(),
             'mg': mg.Musicer(),
             'qqjt': qqjt.Musicer(),
+            'kw': kw.Musicer()
         }
         self.music_player = QMediaPlayer(parent=self.ui)
         self.music_play_list = QMediaPlaylist(parent=self.ui)
@@ -185,6 +197,7 @@ class MusicApp(object):
             def __init__(self, title):
                 super(LoginUi, self).__init__()
                 self.setupUi(self)
+                self.verifywidget.hide()
                 self._login_args = None
                 self.setWindowModality(Qt.ApplicationModal)
                 self.setWindowTitle(f'登录{title}音乐')
@@ -196,18 +209,32 @@ class MusicApp(object):
             def login_args(self):
                 return self._login_args
 
+            def write(self, login_id, password):
+                if login_id is not None:
+                    self.loginidlineEdit.setText(login_id)
+                if password is not None:
+                    self.passwordlineEdit.setText(password)
+
             def accept(self):
                 message = ''
+                verify_code = ''
                 if not (login_id := self.loginidlineEdit.text()):
                     message = '账号不能为空'
                 elif not set(login_id) <= self.numbers:
                     message = '账号不能包含数字以外的元素'
                 elif not (password := self.passwordlineEdit.text()):
                     message = '密码不能为空'
+                elif not (self.verifywidget.isHidden() or
+                        (verify_code := self.verifylineEdit.text())):
+                    message = '请输入验证码'
                 if message:
                     self.messagelabel.setText(message)
                 else:
-                    self._login_args = {'login_id': login_id, 'password': password}
+                    self._login_args = {
+                        'login_id': login_id,
+                        'password': password,
+                        'verify_code': verify_code,
+                    }
                     super(LoginUi, self).accept()
         self.login_dialog = LoginUi
 
@@ -219,15 +246,19 @@ class MusicApp(object):
                     3, self.ui.statusBar().showMessage,
                     f'当前下载路径: {self.DOWNLOAD_PATH}')
             else:
+                init_args = {}
                 if isinstance(e, LoginIncompleteError):
                     QMessageBox.information(self.ui, '提示', '暂未实现该平台的登录功能')
                 else:
                     if isinstance(e, LackLoginArgsError):
                         QMessageBox.information(self.ui, '提示', '未存在登录信息,请登录')
+                    elif isinstance(e, VerifyError):
+                        init_args.update(json.loads(str(e)))
                     else:
                         QMessageBox.warning(
                             self.ui, '警告', '\n'.join([str(e), '请尝试重新登陆']))
-                    self.open_login_dialog(title)
+                        init_args['login_id'] = login_args['login_id']
+                    self.open_login_dialog(title, **init_args)
         title = self.ui.musicercomboBox.currentText()
         if app is None:
             app = self.MAP[title]
@@ -235,14 +266,27 @@ class MusicApp(object):
             self.musicer[app].login(**login_args))).add_done_callback(call_back)
         return login_task
 
-    def open_login_dialog(self, title=None):
+    def open_login_dialog(self, title=None, *, login_id=None, password=None):
         def call_back(*args):
             if login_task.exception() is None:
                 asyncio.create_task(
-                    self.musicer[self.MAP[title]].reset_setting(**login_args))
+                    musicer.reset_setting(**login_args))
         if title is None:
             title = self.ui.musicercomboBox.currentText()
-        (dialog := self.login_dialog(title)).exec_()
+        musicer = self.musicer[self.MAP[title]]
+        dialog = self.login_dialog(title)
+        dialog.write(login_id, password)
+        if (verify_task := musicer.verify()) is not None:
+            def show_verify_widget(*args):
+                if (e := verify_task.exception()) is None:
+                    (img := QPixmap()).loadFromData(
+                        base64.b64decode(verify_task.result().encode()))
+                    dialog.verifywidget.show()
+                    dialog.verifyimglabel.setPixmap(img)
+                else:
+                    QMessageBox.warning(self.ui, '警告', str(e))
+            verify_task.add_done_callback(show_verify_widget)
+        dialog.exec_()
         if (login_args := dialog.login_args) is not None:
             (login_task := self.login(**login_args)).add_done_callback(call_back)
 
@@ -277,6 +321,7 @@ class MusicApp(object):
         # self.ui = QUiLoader().load('ui_music_player.ui')
         self.ui = PlayerUi()
         self.ui.searchButton.clicked.connect(self.search)
+        self.ui.musicercomboBox.addItems(self.MAP.keys())
         self.layout = QVBoxLayout()
         widget = QWidget()
         widget.setLayout(self.layout)

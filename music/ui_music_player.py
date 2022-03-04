@@ -56,10 +56,6 @@ class Ui_MainWindow(object):
         self.horizontalLayout = QHBoxLayout(self.widget_2)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.musicercomboBox = QComboBox(self.widget_2)
-        self.musicercomboBox.addItem("")
-        self.musicercomboBox.addItem("")
-        self.musicercomboBox.addItem("")
-        self.musicercomboBox.addItem("")
         self.musicercomboBox.setObjectName(u"musicercomboBox")
 
         self.horizontalLayout.addWidget(self.musicercomboBox)
@@ -225,11 +221,6 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MusicPlayer", None))
         self.action_bat.setText(QCoreApplication.translate("MainWindow", u"\u5bfc\u51fabat\u811a\u672c\u6587\u4ef6", None))
         self.listengroupBox.setTitle(QCoreApplication.translate("MainWindow", u"\u64ad\u653e\u5217\u8868", None))
-        self.musicercomboBox.setItemText(0, QCoreApplication.translate("MainWindow", u"\u54aa\u5495", None))
-        self.musicercomboBox.setItemText(1, QCoreApplication.translate("MainWindow", u"\u7f51\u6613\u4e91", None))
-        self.musicercomboBox.setItemText(2, QCoreApplication.translate("MainWindow", u"\u5343\u5343\u9759\u542c", None))
-        self.musicercomboBox.setItemText(3, QCoreApplication.translate("MainWindow", u"\u9177\u72d7", None))
-
         self.searchButton.setText("")
         self.timelabel.setText(QCoreApplication.translate("MainWindow", u"--/--", None))
         self.voicepushButton.setText("")
