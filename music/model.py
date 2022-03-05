@@ -2,13 +2,14 @@
 # @Author: kewuaa
 # @Date:   2022-02-11 15:15:54
 # @Last Modified by:   None
-# @Last Modified time: 2022-03-04 15:56:31
+# @Last Modified time: 2022-03-05 09:37:01
 from collections import namedtuple
 from inspect import signature
 from functools import wraps
 from http.cookies import SimpleCookie
 from random import sample
 import os
+import js2py
 import string
 import base64
 import asyncio
@@ -89,11 +90,35 @@ class BaseMusicer(object):
                     content = base64.b64decode(b64content)
                     await f.write(content)
             return path
+        asyncio.create_task(self._judge_env())
         return load_js
 
     @staticmethod
     def _get_random_name() -> str:
         return ''.join(sample(random_string, 3 * 3))
+
+    async def _judge_env(self):
+        proc = await asyncio.create_subprocess_shell(
+            'node -v',
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE)
+        _, stderr = await proc.communicate()
+        if stderr:
+            async def run_js(path, data=None):
+                context = aiofile.AIOWrapper(js2py.EvalJs())
+                async with aiofile.open_async(path, 'r') as f:
+                    js_code = await f.read()
+                    await context.execute(js_code.split('/' * 33)[0])
+                    if data is None:
+                        return await context.main()
+                    else:
+                        return await context.main(data)
+            self._run_js = run_js
+        else:
+            async def run_js(path, data=None):
+                return await self._get_popen_result(
+                    ' '.join(['node', path, data or '']))
+            self._run_js = run_js
 
     async def _get_popen_result(self, cmd: str) -> str:
         proc = await asyncio.create_subprocess_shell(
@@ -162,10 +187,11 @@ class BaseMusicer(object):
         @wraps(login_func)
         async def _login(*args, **kwargs):
             new_cookie = await login_func(*args, **kwargs)
-            cookies = self._get_cookie_dict(
-                self.headers.get((c := 'cookie'), self.headers[(c := 'Cookie')]))
+            if (cookies := self.headers.get(key := 'cookie')) is None:
+                cookies = self.headers[(key := 'Cookie')]
+            cookies = self._get_cookie_dict(cookies)
             cookies.update(new_cookie)
-            cookie_str = self.headers[c] = self._get_cookie_str(cookies)
+            cookie_str = self.headers[key] = self._get_cookie_str(cookies)
             asyncio.create_task(self._reset_cookie(cookie_str))
         return _login
 

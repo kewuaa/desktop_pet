@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-03-03 12:52:16
 # @Last Modified by:   None
-# @Last Modified time: 2022-03-04 18:58:07
+# @Last Modified time: 2022-03-04 18:59:16
 import os
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
@@ -11,7 +11,6 @@ if __name__ == '__main__':
     sys.path.append(os.path.join(current_path, '../..'))
 
 from urllib.parse import quote
-from functools import partial
 import re
 import time
 import json
