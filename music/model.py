@@ -2,7 +2,7 @@
 # @Author: kewuaa
 # @Date:   2022-02-11 15:15:54
 # @Last Modified by:   None
-# @Last Modified time: 2022-03-05 09:37:01
+# @Last Modified time: 2022-03-05 09:39:43
 from collections import namedtuple
 from inspect import signature
 from functools import wraps
@@ -120,7 +120,8 @@ class BaseMusicer(object):
                     ' '.join(['node', path, data or '']))
             self._run_js = run_js
 
-    async def _get_popen_result(self, cmd: str) -> str:
+    @staticmethod
+    async def _get_popen_result(cmd: str) -> str:
         proc = await asyncio.create_subprocess_shell(
             cmd,
             stdout=asyncio.subprocess.PIPE,
