@@ -58,6 +58,7 @@ try:
     from kg import kg
     from mg import mg
     from kw import kw
+    from qq import qq
     from qqjt import qqjt
     from ui_login import Ui_Dialog
     from ui_music_player import Ui_MainWindow
@@ -71,6 +72,7 @@ except ImportError:
     from .kg import kg
     from .mg import mg
     from .kw import kw
+    from .qq import qq
     from .qqjt import qqjt
     from .ui_login import Ui_Dialog
     from .ui_music_player import Ui_MainWindow
@@ -138,8 +140,9 @@ class MusicApp(object):
     SAVE_PATH = os.path.join(DATA_PATH, 'listen')
     MAP = {
         '咪咕': 'mg',
-        '千千': 'qqjt',
         '网易云': 'wyy',
+        'QQ': 'qq',
+        '千千': 'qqjt',
         '酷我': 'kw',
         '酷狗': 'kg'
     }
@@ -164,6 +167,7 @@ class MusicApp(object):
             'wyy': wyy.Musicer(),
             'kg': kg.Musicer(),
             'mg': mg.Musicer(),
+            'qq': qq.Musicer(),
             'qqjt': qqjt.Musicer(),
             'kw': kw.Musicer()
         }
@@ -304,10 +308,10 @@ class MusicApp(object):
                 self.setWindowIcon(self.window_icon)
 
             def closeEvent(self, event):
+                asyncio.create_task(app.close())
                 result = QMessageBox.question(self, '请确认', '是否确认关闭',
                                               QMessageBox.Yes | QMessageBox.No)
                 if result == QMessageBox.Yes:
-                    asyncio.create_task(app.close())
                     self.save()
                     event.accept()
                 else:
@@ -732,12 +736,13 @@ class MusicApp(object):
         add_music_button.setToolTip('<b>添加至播放列表</b>')
         add_button.setToolTip('<b>添加至下载列表</b>')
         self.layout.addWidget(item)
-        if not os.path.exists(
-                path := os.path.join(
-                    self.IMG_PATH, song_info.pic)):
-            asyncio.create_task(
-                download_img(song_info.pic_url, path))
-        song_label.setToolTip(f'<img src={path} >')
+        if song_info.pic is not None:
+            if not os.path.exists(
+                    path := os.path.join(
+                        self.IMG_PATH, song_info.pic)):
+                asyncio.create_task(
+                    download_img(song_info.pic_url, path))
+            song_label.setToolTip(f'<img src={path} >')
 
     async def download_music(self, song_info, path):
         try:
@@ -776,6 +781,7 @@ class MusicApp(object):
 
     async def close(self):
         for musicer in self.musicer.values():
+            print('=' * 33)
             await musicer.close()
 
 
@@ -784,6 +790,9 @@ if __name__ == '__main__':
     loop = QEventLoop(app)
     asyncio.set_event_loop(loop)
     with loop:
+        # try:
         music_app = MusicApp()
         music_app.show()
         loop.run_forever()
+        # finally:
+        #     loop.run_until_complete(music_app.close())

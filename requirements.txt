@@ -1,4 +1,5 @@
 aiohttp==3.8.1
+Js2Py==0.71
 lxml==4.7.1
 Pillow==9.0.1
 pycryptodome==3.14.1

@@ -4,6 +4,7 @@
 # @Last Modified by:   None
 # @Last Modified time: 2022-02-17 11:37:47
 import os
+from time import time
 current_path, _ = os.path.split(os.path.realpath(__file__))
 if __name__ == '__main__':
     import sys
@@ -19,6 +20,7 @@ from lxml.html import fromstring
 from aiohttp import ClientSession
 from PySide2.QtWidgets import QApplication
 from PySide2.QtWidgets import QMainWindow
+from PySide2.QtWidgets import QMessageBox
 from PySide2.QtCore import Signal
 from PySide2.QtCore import Slot
 from PySide2.QtCore import Qt
@@ -166,7 +168,12 @@ class TransApp(object):
 
             def closeEvent(self, event):
                 asyncio.create_task(app.close())
-                super(TransUi, self).closeEvent(event)
+                result = QMessageBox.question(self, '请确认', '是否确认关闭',
+                                              QMessageBox.Yes | QMessageBox.No)
+                if result == QMessageBox.Yes:
+                    event.accept()
+                else:
+                    event.ignore()
 
         # self.ui = QUiLoader().load('ui_translate.ui')
         self.ui = TransUi()

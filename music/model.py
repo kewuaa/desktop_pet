@@ -17,7 +17,7 @@ import asyncio
 from hzy.aiofile import aiofile
 from aiohttp import ClientSession
 
-SongInfo = namedtuple('SongInfo', ['text', 'id', 'pic', 'pic_url'])
+SongInfo = namedtuple('SongInfo', ['text', 'id', 'pic', 'pic_url'], defaults=(None, None))
 SongUrl = namedtuple('SongUrl', ['url', 'vip'], defaults=(False,))
 SongID = namedtuple('SongID', ['id', 'app'])
 random_string = string.ascii_letters + string.digits
@@ -50,7 +50,6 @@ class BaseMusicer(object):
             self, *, js: str = None, current_path: str, verify=False):
         super(BaseMusicer, self).__init__()
         self.headers = {}
-        self.sess = ClientSession()
         self.current_path = current_path
         self._need_verify = verify
         self._add_cookie()
@@ -116,8 +115,8 @@ class BaseMusicer(object):
             self._run_js = run_js
         else:
             async def run_js(path, data=None):
-                return await self._get_popen_result(
-                    ' '.join(['node', path, data or '']))
+                cmd = ' '.join(['node', path, data or ''])
+                return await self._get_popen_result(cmd)
             self._run_js = run_js
 
     @staticmethod
