@@ -181,14 +181,3 @@ class Musicer(BaseMusicer):
     async def close(self):
         await super(Musicer, self).close()
         os.remove(await self.load_js(self.js_name))
-
-
-# async def main():
-#     m = Musicer()
-#     await asyncio.sleep(2)
-#     try:
-#         print(await m._get_song_url('001TXSYu1Gwuwv'))
-#     finally:
-#         await m.close()
-
-# asyncio.get_event_loop().run_until_complete(main())
