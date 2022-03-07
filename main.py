@@ -1,5 +1,7 @@
 import sys
 import importlib
+
+
 if  args := sys.argv[1:]:
     key = args[0]
 else:
@@ -9,5 +11,6 @@ key_map = {
     'music_player': importlib.import_module('pet.music.music_player'),
     'translater': importlib.import_module('pet.translate.translater')
 }
+assert key in key_map, 'params error'
 
 key_map[key].run()
