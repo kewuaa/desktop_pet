@@ -3,15 +3,10 @@
 # @Date:   2022-01-21 18:36:13
 # @Last Modified by:   None
 # @Last Modified time: 2022-03-05 08:20:06
-import os
-current_path, _ = os.path.split(os.path.realpath(__file__))
-if __name__ == '__main__':
-    import sys
-    sys.path.append(os.path.join(current_path, '..'))
-
 from io import BytesIO
-from inspect import signature
 from collections.abc import Coroutine
+import os
+import sys
 import json
 import pickle
 import base64
@@ -26,7 +21,6 @@ from PySide2.QtWidgets import QWidget
 from PySide2.QtWidgets import QLabel
 from PySide2.QtWidgets import QMessageBox
 from PySide2.QtWidgets import QFileDialog
-from PySide2.QtWidgets import QToolTip
 from PySide2.QtWidgets import QVBoxLayout
 from PySide2.QtWidgets import QHBoxLayout
 from PySide2.QtWidgets import QToolButton
@@ -35,7 +29,6 @@ from PySide2.QtWidgets import QAction
 from PySide2.QtMultimedia import QMediaPlayer
 from PySide2.QtMultimedia import QMediaContent
 from PySide2.QtMultimedia import QMediaPlaylist
-from PySide2.QtCore import QModelIndex
 from PySide2.QtCore import Qt
 from PySide2.QtCore import QUrl
 from PySide2.QtCore import Slot
@@ -43,39 +36,25 @@ from PySide2.QtCore import Signal
 from PySide2.QtCore import QStringListModel
 from PySide2.QtGui import QIcon
 from PySide2.QtGui import QPixmap
-from PySide2.QtUiTools import QUiLoader
+# from PySide2.QtUiTools import QUiLoader
 from qasync import QEventLoop
 
 
-from hzy.aiofile import aiofile
-try:
-    from model import CookieInvalidError
-    from model import LackLoginArgsError
-    from model import LoginIncompleteError
-    from model import VerifyError
-    from pictures import *
-    from wyy import wyy
-    from kg import kg
-    from mg import mg
-    from kw import kw
-    from qq import qq
-    from qqjt import qqjt
-    from ui_login import Ui_Dialog
-    from ui_music_player import Ui_MainWindow
-except ImportError:
-    from .model import CookieInvalidError
-    from .model import LackLoginArgsError
-    from .model import LoginIncompleteError
-    from .model import VerifyError
-    from .pictures import *
-    from .wyy import wyy
-    from .kg import kg
-    from .mg import mg
-    from .kw import kw
-    from .qq import qq
-    from .qqjt import qqjt
-    from .ui_login import Ui_Dialog
-    from .ui_music_player import Ui_MainWindow
+from pet.hzy.aiofile import aiofile
+from pet.music.musicer_model import CookieInvalidError
+from pet.music.musicer_model import LackLoginArgsError
+from pet.music.musicer_model import LoginIncompleteError
+from pet.music.musicer_model import VerifyError
+from pet.music.pictures import *
+from pet.music.wyy import wyy
+from pet.music.kg import kg
+from pet.music.mg import mg
+from pet.music.kw import kw
+from pet.music.qq import qq
+from pet.music.qqjt import qqjt
+from pet.music.ui_login import Ui_Dialog
+from pet.music.ui_music_player import Ui_MainWindow
+current_path, _ = os.path.split(os.path.realpath(__file__))
 
 
 async def download(url, path):
@@ -784,15 +763,15 @@ class MusicApp(object):
             print('=' * 33)
             await musicer.close()
 
-
-if __name__ == '__main__':
+def run():
     app = QApplication(sys.argv)
     loop = QEventLoop(app)
     asyncio.set_event_loop(loop)
     with loop:
-        # try:
         music_app = MusicApp()
         music_app.show()
         loop.run_forever()
-        # finally:
-        #     loop.run_until_complete(music_app.close())
+
+
+if __name__ == '__main__':
+    run()

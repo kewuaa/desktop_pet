@@ -3,37 +3,22 @@
 # @Date:   2022-03-03 12:52:16
 # @Last Modified by:   None
 # @Last Modified time: 2022-03-04 18:59:16
-import os
-current_path, _ = os.path.split(os.path.realpath(__file__))
-if __name__ == '__main__':
-    import sys
-    sys.path.append(os.path.join(current_path, '..'))
-    sys.path.append(os.path.join(current_path, '../..'))
-
 from urllib.parse import quote
 import re
+import os
 import time
 import json
 import ctypes
 import secrets
-import asyncio
 
-from hzy import fake_ua
-try:
-    from model import SongInfo
-    from model import SongUrl
-    from model import SongID
-    from model import BaseMusicer
-    from model import VerifyError
-except ImportError:
-    from ..model import SongInfo
-    from ..model import SongUrl
-    from ..model import SongID
-    from ..model import BaseMusicer
-    from ..model import VerifyError
+from pet.music.musicer_model import SongInfo
+from pet.music.musicer_model import SongUrl
+from pet.music.musicer_model import SongID
+from pet.music.musicer_model import BaseMusicer
+from pet.music.musicer_model import VerifyError
 
 
-ua = fake_ua.UserAgent()
+current_path, _ = os.path.split(os.path.realpath(__file__))
 spare_cookie = 'kw_token=U3AE5RVQKM'
 
 
@@ -118,7 +103,7 @@ class Musicer(BaseMusicer):
 
     async def _get_song_info(self, song, retry_num=3):
         keyword = quote(song)
-        self.headers['user-agent'] = ua.get_ua()
+        self._set_random_ua()
         self.headers['csrf'] = self.sub.search(self.headers['Cookie']).group()
         res = await self.session.get(
             self.SEARCH_URL.format(keyword=keyword,
@@ -138,7 +123,7 @@ class Musicer(BaseMusicer):
                 for song in songs]
 
     async def _get_song_url(self, _id, retry_num=3):
-        self.headers['user-agent'] = ua.get_ua()
+        self._set_random_ua()
         self.headers['csrf'] = self.sub.search(self.headers['Cookie']).group()
         res = await self.session.get(
             self.SONG_URL.format(rid=_id, reqid=get_reqid()),

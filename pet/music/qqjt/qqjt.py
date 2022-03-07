@@ -3,32 +3,18 @@
 # @Date:   2022-02-17 09:15:39
 # @Last Modified by:   None
 # @Last Modified time: 2022-03-04 15:51:11
-import os
-current_path, _ = os.path.split(os.path.realpath(__file__))
-if __name__ == '__main__':
-    import sys
-    sys.path.append(os.path.join(current_path, '..'))
-    sys.path.append(os.path.join(current_path, '../..'))
-
 from urllib.parse import quote
+import os
 import time
 import hashlib
-import asyncio
 
-from hzy import fake_ua
-try:
-    from model import SongInfo
-    from model import SongUrl
-    from model import SongID
-    from model import BaseMusicer
-except ImportError:
-    from ..model import SongInfo
-    from ..model import SongUrl
-    from ..model import SongID
-    from ..model import BaseMusicer
+from pet.music.musicer_model import SongInfo
+from pet.music.musicer_model import SongUrl
+from pet.music.musicer_model import SongID
+from pet.music.musicer_model import BaseMusicer
 
 
-ua = fake_ua.UserAgent()
+current_path, _ = os.path.split(os.path.realpath(__file__))
 spare_cookie = 'cuid=65bc7720-ecd3-a26b-eda1-719b8f34f2c9; Hm_lvt_d0ad46e4afeacf34cd12de4c9b553aa6=1645147447,1645147510,1645150160,1645150251; Hm_lpvt_d0ad46e4afeacf34cd12de4c9b553aa6=1645150251'
 
 
@@ -53,7 +39,7 @@ class Musicer(BaseMusicer):
         sign = hashlib.md5(
             self.SEARCH_KEY.format(
                 time_stamp=time_stamp, keyword=song).encode()).hexdigest()
-        self.headers['user-agent'] = ua.get_ua()
+        self._set_random_ua()
         res = await self.session.get(self.SEARCH_URL.format(
             sign=sign, keyword=keyword, time_stamp=time_stamp), headers=self.headers)
         assert (status := res.status) == 200, f'response: {status}'
@@ -71,7 +57,7 @@ class Musicer(BaseMusicer):
         sign = hashlib.md5(
             self.SONG_KEY.format(
                 TSID=_id, time_stamp=time_stamp).encode()).hexdigest()
-        self.headers['user-agent'] = ua.get_ua()
+        self._set_random_ua()
         res = await self.session.get(
             self.SONG_URL.format(sign=sign, TSID=_id, time_stamp=time_stamp),
             headers=self.headers)

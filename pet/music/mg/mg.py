@@ -3,45 +3,28 @@
 # @Date:   2022-02-07 00:40:21
 # @Last Modified by:   None
 # @Last Modified time: 2022-03-04 15:51:30
-import os
-current_path, _ = os.path.split(os.path.realpath(__file__))
-if __name__ == '__main__':
-    import sys
-    sys.path.append(os.path.join(current_path, '..'))
-    sys.path.append(os.path.join(current_path, '../..'))
-
 from urllib.parse import quote
+import os
 import json
 import time
 import hashlib
-import asyncio
 
 from lxml.html import fromstring
 from yarl import URL
 
 
-from hzy import fake_ua
-from hzy.aiofile.aiofile import AsyncFuncWrapper
-try:
-    from model import BaseMusicer
-    from model import SongInfo
-    from model import SongUrl
-    from model import SongID
-    from model import CookieInvalidError
-    from AES import encrypt
-    from RSA import RSA
-except ImportError:
-    from ..AES import encrypt
-    from ..RSA import RSA
-    from ..model import BaseMusicer
-    from ..model import SongInfo
-    from ..model import SongUrl
-    from ..model import SongID
-    from ..model import CookieInvalidError
+from pet.hzy.aiofile.aiofile import AsyncFuncWrapper
+from pet.music.musicer_model import BaseMusicer
+from pet.music.musicer_model import SongInfo
+from pet.music.musicer_model import SongUrl
+from pet.music.musicer_model import SongID
+from pet.music.musicer_model import CookieInvalidError
+from pet.music.AES import encrypt
+from pet.music.RSA import RSA
 
 
-ua = fake_ua.UserAgent('internetexplorer')
 fromstring = AsyncFuncWrapper(fromstring)
+current_path, _ = os.path.split(os.path.realpath(__file__))
 spare_cookie = 'idmpauth=true@passport.migu.cn; mg_uem_user_id_9fbe6599400e43a4a58700a822fd57f8=9b31b958-c913-4b36-8640-f304a76eca4d; cookieId=OW-j84sttxXsPA7bt_VzncwuQEz7V481644898806097; migu_cookie_id=c7910af6-2669-46cf-8503-482ffd711c79-n41645957215805'
 
 
@@ -52,12 +35,14 @@ class Musicer(BaseMusicer):
     KEY_STR = 'c001002Afhtmlkc7910af6-2669-46cf-8503-482ffd711c79-n41645957215805keyword{keyword}s{s}u{user_agent}/220001v3.22.5'
     SONG_URL = 'https://music.migu.cn/v3/api/music/audioPlayer/getPlayInfo?dataType=2&data={}&secKey=ElP1Za4xkAwkmEnBhaswmP%2FcK91dJQEYRVjJSVvQ9PKXL1CrvdcQVQ2MbjtSfy1JMU8o%2FzkTJY2ypU3NWk%2BXf7aYAv93IdJQAJZKmC%2Fe%2B48V2s52iOeCUcFYc9piXHT%2FMlawqSS4bwaqX%2BucR9J1A3XE21rQSkhjPKLXOAhRESc%3D'
     PERSONAL_KEY = '4ea5c508a6566e76240543f8feb06fd457777be39549c4016436afda65d2330e'
-    TO_ENCRYP = '{"copyrightId":"%s","type":2,"auditionsFlag":11}'  # type: 标准:1 高品:2 无损:3,至臻:4 3D:5
+    TO_ENCRYP = '{"copyrightId":"%s","type":2,"auditionsFlag":11}'
+    # type: 标准:1 高品:2 无损:3,至臻:4 3D:5
 
     def __init__(self):
         super(Musicer, self).__init__(current_path=current_path)
         self.headers['cookie'] = spare_cookie
         # asyncio.create_task(self.init())
+        self._remove_browser('internetexplorer')
         self._login = self._update_cookie(self._login)
         self.encode = lambda string: quote(string).replace('/', '%2F').replace('%28', '(').replace('%29', ')')
 
@@ -79,11 +64,11 @@ class Musicer(BaseMusicer):
         keyword = quote(song)
         time_stamp = int(time.time())
         self.headers['referer'] = 'https://music.migu.cn/v3'
-        user_agent = self.headers['user-agent'] = ua.get_ua()
+        self._set_random_ua()
         sha1 = hashlib.sha1(self.encode(self.KEY_STR.format(
                                         keyword=keyword,
                                         s=time_stamp,
-                                        user_agent=user_agent
+                                        user_agent=self.headers['user-agent']
                                         )).encode())
         res = await self.session.get(
             self.SEARCH_URL.format(i=sha1.hexdigest(),
@@ -109,7 +94,7 @@ class Musicer(BaseMusicer):
 
     async def _get_song_url(self, _id):
         self.headers['referer'] = 'https://music.migu.cn/v3/music/player/audio'
-        self.headers['user-agent'] = ua.get_ua()
+        self._set_random_ua()
         to_encryp = self.TO_ENCRYP % _id
         data = encrypt(to_encryp, self.PERSONAL_KEY).decode()
         data = self.encode(data)

@@ -28,10 +28,10 @@ from PySide2.QtGui import QCursor
 from PySide2.QtUiTools import QUiLoader
 from qasync import QEventLoop
 
-from hzy.aiofile import aiofile
-from translate.translate import TransApp
-from music.music_player import MusicApp
-from pictures import *
+from pet.hzy.aiofile import aiofile
+from pet.translate.translater import TransApp
+from pet.music.music_player import MusicApp
+from pet.pictures import *
 
 
 class Config:
@@ -195,7 +195,7 @@ class Pet(QWidget):
         return img
 
 
-if __name__ == '__main__':
+def run():
     application = QApplication(sys.argv)
     loop = QEventLoop(application)
     asyncio.set_event_loop(loop)

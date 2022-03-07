@@ -275,18 +275,13 @@ class UserAgent(object):
 
     URL = 'http://fake-useragent.herokuapp.com/browsers/0.1.5'
 
-    def __init__(self, *remove: tuple):
+    def __init__(self):
         super(UserAgent, self).__init__()
         self.choices = list(browsers.keys())
-        if remove:
-            for item in remove:
-                self.choices.remove(item)
+
+    def remove(self, browser_type: str):
+        self.choices.remove(browser_type)
 
     def get_ua(self):
         uas = browsers[random.choice(self.choices)]
         return random.choice(uas)
-
-
-if __name__ == '__main__':
-    Ua = UserAgent()
-    print(Ua.get_ua())
