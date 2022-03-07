@@ -25,7 +25,7 @@ from PySide2.QtGui import QImage
 from PySide2.QtGui import QPixmap
 from PySide2.QtGui import QIcon
 from PySide2.QtGui import QCursor
-from PySide2.QtUiTools import QUiLoader
+# from PySide2.QtUiTools import QUiLoader
 from qasync import QEventLoop
 
 from pet.hzy.aiofile import aiofile
@@ -139,7 +139,7 @@ class Pet(QWidget):
             async with aiofile.open_async(path, 'a') as f:
                 await f.write('@echo off\nif "%1" == "233" goto begin\n')
                 await f.write(r'mshta vbscript:createobject("wscript.shell").run("%~nx0 233",0)(window.close)&&exit')
-                await f.write(f'\n:begin\npython {__file__}')
+                await f.write(f'\n:begin\npython {os.path.abspath(sys.argv[0])} pet')
 
         def connect_func():
             asyncio.create_task(write())

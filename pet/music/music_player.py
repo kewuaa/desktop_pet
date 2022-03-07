@@ -360,7 +360,7 @@ class MusicApp(object):
             async with aiofile.open_async(path, 'a') as f:
                 await f.write('@echo off\nif "%1" == "233" goto begin\n')
                 await f.write(r'mshta vbscript:createobject("wscript.shell").run("%~nx0 233",0)(window.close)&&exit')
-                await f.write(f'\n:begin\npython {__file__}')
+                await f.write(f'\n:begin\npython {os.path.abspath(sys.argv[0])} music_player')
 
         def connect_func():
             asyncio.create_task(write())
@@ -760,7 +760,6 @@ class MusicApp(object):
 
     async def close(self):
         for musicer in self.musicer.values():
-            print('=' * 33)
             await musicer.close()
 
 def run():
