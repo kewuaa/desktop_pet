@@ -120,7 +120,4 @@ class Musicer(BaseMusicer):
         return {i.key: i.value for i in res.cookies.values()}
 
     async def _get_checktoken(self):
-        path = await self.load_js()
-        asyncio.current_task().add_done_callback(
-            lambda x: os.remove(path))
-        return await self._run_js(path)
+        return await self._run_js()

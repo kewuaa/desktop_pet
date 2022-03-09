@@ -688,8 +688,11 @@ class MusicApp(object):
     async def search_song(self, song, musicer):
         try:
             songs_info = await self.musicer[musicer]._get_song_info(song)
-        except AssertionError as e:
-            QMessageBox.critical(self.ui, '错误', str(e))
+        except Exception as e:
+            if isinstance(e, AssertionError):
+                QMessageBox.critical(self.ui, '错误', str(e))
+            elif isinstance(e, CookieInvalidError):
+                self.login(musicer)
             self.current_search = None
             self.current_musicer = None
             self.ui.inputlineEdit.clear()

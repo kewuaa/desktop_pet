@@ -1,11 +1,12 @@
 from random import sample
 import os
-import js2py
 import string
 import base64
 import asyncio
 
 from aiohttp import ClientSession
+from py_mini_racer import MiniRacer
+from py_mini_racer.py_mini_racer import JSEvalException
 
 from pet.hzy import fake_ua
 from pet.hzy.aiofile import aiofile
@@ -21,9 +22,9 @@ class BaseModel(object):
         self.headers = {}
         self.sess = ClientSession()
         self.current_path = current_path
+        self._get_js_path = self._get_js_path()
         self.ua = fake_ua.UserAgent()
-        if js is not None:
-            self.load_js = self._load_js(js)
+        self._js_code = js and self._load_js(js)
 
     def _set_random_ua(self):
         self.headers['user-agent'] = self.ua.get_ua()
@@ -36,21 +37,28 @@ class BaseModel(object):
         if self.sess.closed:
             self.sess = ClientSession()
         return self.sess
-    
+
     def _load_js(self, js: str):
-        async def load_js(name: str = None) -> str:
-            if name is None:
-                name = self._get_random_name()
-            if not os.path.exists(
-                    path := os.path.join(self.current_path, f'{name}.js')):
-                async with aiofile.open_async(
-                        path, 'wb') as f:
-                    b64content = js.encode()
-                    content = base64.b64decode(b64content)
-                    await f.write(content)
-            return path
         asyncio.create_task(self._judge_env())
-        return load_js
+        return base64.b64decode(js.encode())
+
+    def _get_js_path(self):
+        times = 0
+        self._js_path = None
+
+        async def func():
+            nonlocal times
+            times += 1
+            if not times % 3:
+                os.remove(self._js_path)
+                self._js_path = None
+            if self._js_path is None:
+                self._js_path = os.path.join(
+                    self.current_path, self._get_random_name() + '.js')
+                async with aiofile.open_async(self._js_path, 'wb') as f:
+                    await f.write(self._js_code)
+            return self._js_path
+        return func
 
     @staticmethod
     def _get_random_name() -> str:
@@ -62,22 +70,26 @@ class BaseModel(object):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE)
         _, stderr = await proc.communicate()
-        if not stderr:
-            async def run_js(path, data=None):
-                context = aiofile.AIOWrapper(js2py.EvalJs())
-                async with aiofile.open_async(path, 'r') as f:
-                    js_code = await f.read()
-                    await context.execute(js_code.split('/' * 33)[0])
+        if stderr:
+            context = aiofile.AIOWrapper(MiniRacer())
+            js_code = self._js_code.decode().split('/' * 33)[0]
+            try:
+                await context.eval(js_code)
+            except JSEvalException as e:
+                print('error:', e)
+                run_js = lambda _: None
+            else:
+                async def run_js(data=None):
                     if data is None:
-                        return await context.main()
+                        return await context.call('main')
                     else:
-                        return await context.main(data)
-            self._run_js = run_js
+                        return await context.call('main', data)
         else:
-            async def run_js(path, data=None):
+            async def run_js(data=None):
+                path = await self._get_js_path()
                 cmd = ' '.join(['node', path, data or ''])
                 return await self._get_popen_result(cmd)
-            self._run_js = run_js
+        self._run_js = run_js
 
     @staticmethod
     async def _get_popen_result(cmd: str) -> str:
@@ -91,6 +103,7 @@ class BaseModel(object):
 
     async def close(self):
         await self.session.close()
+        self._js_path and os.remove(self._js_path)
 
 
 class Signal(object):
@@ -106,5 +119,4 @@ class Signal(object):
         self.args = args
 
     def emit(self):
-        if self.func is not None:
-            self.func(*self.args)
+        self.func and self.func(*self.args)

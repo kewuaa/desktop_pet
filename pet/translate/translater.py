@@ -66,7 +66,7 @@ class BaiduTranslater(BaseModel):
 
     async def async_trans(self, query: str) -> str:
         """异步获取翻译结果."""
-        sign = await self._run_js(await self.load_js(self.js_name), query)
+        sign = await self._run_js(query)
         self._set_random_ua()
         self.data.update({'sign': sign, 'query': query})
         async with self.session.post(
