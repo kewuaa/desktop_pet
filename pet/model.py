@@ -5,8 +5,7 @@ import base64
 import asyncio
 
 from aiohttp import ClientSession
-from py_mini_racer import MiniRacer
-from py_mini_racer.py_mini_racer import JSEvalException
+import js2py
 
 from pet.hzy import fake_ua
 from pet.hzy.aiofile import aiofile
@@ -70,16 +69,18 @@ class BaseModel(object):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE)
         _, stderr = await proc.communicate()
-        if stderr:
-            context = aiofile.AIOWrapper(MiniRacer())
+        if not stderr:
+            context = aiofile.AIOWrapper(js2py.EvalJs())
             js_code = self._js_code.decode().split('/' * 33)[0]
             try:
-                await context.eval(js_code)
-            except JSEvalException as e:
-                print('error:', e)
-                run_js = lambda _: None
+                await context.execute(js_code)
+            except js2py.PyJsException:
+                is_ok = False
             else:
+                is_ok = True
+            finally:
                 async def run_js(data=None):
+                    assert is_ok, 'js parse error'
                     if data is None:
                         return await context.call('main')
                     else:
