@@ -82,9 +82,9 @@ class BaseModel(object):
                 async def run_js(data=None):
                     assert is_ok, 'js parse error'
                     if data is None:
-                        return await context.call('main')
+                        return await context.main()
                     else:
-                        return await context.call('main', data)
+                        return await context.main(data)
         else:
             async def run_js(data=None):
                 path = await self._get_js_path()
