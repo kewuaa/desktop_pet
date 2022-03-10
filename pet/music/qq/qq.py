@@ -3,12 +3,15 @@
 # @Date:   2022-02-22 22:10:35
 # @Last Modified by:   None
 # @Last Modified time: 2022-03-04 15:58:35
+from re import compile
 from datetime import datetime
 from itertools import zip_longest
 import os
 import time
 import json
 import random
+
+from playwright.async_api import async_playwright
 
 from pet.music.musicer_model import SongInfo
 from pet.music.musicer_model import SongUrl
@@ -120,6 +123,8 @@ class Musicer(BaseMusicer):
         self.headers['cookie'] = spare_cookie
         self.headers['referer'] = 'https://y.qq.com/'
         self.js_name = self._get_random_name()
+        self._route_compile = compile(r'(\.png$)|(\.jpe?g$)')
+        self._match_compile = compile(r'ssl.+login\?')
 
     async def _get_song_info(self, song):
         time_stamp = int(time.time() * 1000)
@@ -159,4 +164,36 @@ class Musicer(BaseMusicer):
         return SongUrl(url)
 
     # async def _login(self, login_id, password, **kwargs):
-        # pass
+    #     async with async_playwright() as p:
+    #         browser = await p.chromium.launch(headless=False)
+    #         context = await browser.new_context()
+    #         await context.route(self._route_compile, lambda route: route.abort())
+    #         page = await context.new_page()
+    #         page.on('request', self._get_response)
+    #         await page.goto('https://y.qq.com/')
+    #         await page.click('//*[@id="app"]//a[@class="top_login__link"]')
+    #         login_frame = page.frame_locator('//iframe[@name="login_frame"]')
+    #         await login_frame.frame_locator('//iframe[@name="ptlogin_iframe"]').locator(
+    #             '//a[@id="switcher_plogin"]').click()
+    #         login_frame = login_frame.frame_locator('//iframe[@name="ptlogin_iframe"]')
+    #         await (id_frame := login_frame.locator('//input[@name="u"]')).click()
+    #         await id_frame.fill(login_id)
+    #         await id_frame.press("Tab")
+    #         await (password_frame := login_frame.locator('//input[@name="p"]')).fill(password)
+    #         async with page.expect_navigation():
+    #             await password_frame.press('Enter')
+    #         import asyncio
+    #         await asyncio.sleep(3)
+    #         await page.close()
+    #         await context.close()
+    #         await browser.close()
+    #         assert False, 'test'
+
+    # def _get_response(self, request):
+    #     url = request.url
+    #     if self._match_compile.search(url) is None:
+    #         return
+    #     else:
+    #         res = request.response
+    #         print(res)
+        
