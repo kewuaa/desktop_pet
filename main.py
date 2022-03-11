@@ -7,10 +7,10 @@ if  args := sys.argv[1:]:
 else:
     key = 'pet'
 key_map = {
-    'pet': importlib.import_module('pet.pet'),
-    'music_player': importlib.import_module('pet.music.music_player'),
-    'translater': importlib.import_module('pet.translate.translater')
+    'pet': 'pet.pet',
+    'music_player': 'pet.music.music_player',
+    'translater': 'pet.translate.translater',
 }
 assert key in key_map, 'params error'
 
-key_map[key].run()
+importlib.import_module(key_map[key]).run()

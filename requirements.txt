@@ -1,7 +1,8 @@
 aiohttp==3.8.1
-Js2Py==0.71
 lxml==4.7.1
 Pillow==9.0.1
+playwright==1.19.1
+py_mini_racer==0.6.0
 pycryptodome==3.14.1
 PySide2==5.15.2.1
 qasync==0.22.0
