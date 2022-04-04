@@ -70,7 +70,7 @@ class BaseModel(object):
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE)
         _, stderr = await proc.communicate()
-        if not stderr:
+        if stderr:
             context = aiofile.AIOWrapper(MiniRacer())
             js_code = self._js_code.decode().split('/' * 33)[0]
             try:

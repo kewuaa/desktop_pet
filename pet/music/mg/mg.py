@@ -31,8 +31,8 @@ spare_cookie = 'idmpauth=true@passport.migu.cn; mg_uem_user_id_9fbe6599400e43a4a
 class Musicer(BaseMusicer):
     """docstring for Musicer."""
 
-    SEARCH_URL = 'https://music.migu.cn/v3/search?page=1&type=song&i={i}&f=html&s={s}&c=001002A&keyword={keyword}&v=3.22.5'
-    KEY_STR = 'c001002Afhtmlkc7910af6-2669-46cf-8503-482ffd711c79-n41645957215805keyword{keyword}s{s}u{user_agent}/220001v3.22.5'
+    SEARCH_URL = 'https://music.migu.cn/v3/search?page=1&type=song&i={i}&f=html&s={s}&c=001002A&keyword={keyword}&v=3.22.7'
+    KEY_STR = 'c001002Afhtmlkc7910af6-2669-46cf-8503-482ffd711c79-n41645957215805keyword{keyword}s{s}u{user_agent}/220001v3.22.7'
     SONG_URL = 'https://music.migu.cn/v3/api/music/audioPlayer/getPlayInfo?dataType=2&data={}&secKey=ElP1Za4xkAwkmEnBhaswmP%2FcK91dJQEYRVjJSVvQ9PKXL1CrvdcQVQ2MbjtSfy1JMU8o%2FzkTJY2ypU3NWk%2BXf7aYAv93IdJQAJZKmC%2Fe%2B48V2s52iOeCUcFYc9piXHT%2FMlawqSS4bwaqX%2BucR9J1A3XE21rQSkhjPKLXOAhRESc%3D'
     PERSONAL_KEY = '4ea5c508a6566e76240543f8feb06fd457777be39549c4016436afda65d2330e'
     TO_ENCRYP = '{"copyrightId":"%s","type":2,"auditionsFlag":11}'

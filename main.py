@@ -2,7 +2,7 @@ import sys
 import importlib
 
 
-if  args := sys.argv[1:]:
+if args := sys.argv[1:]:
     key = args[0]
 else:
     key = 'pet'
