@@ -1,17 +1,33 @@
 # -*- coding: utf-8 -*-
-# @Author: kewuaa
-# @Date:   2022-02-22 22:10:35
-# @Last Modified by:   None
-# @Last Modified time: 2022-03-04 15:58:35
-from re import compile
+#******************************************************************#
+#
+#          +-------------------------------------------+
+#          |  __                                       |
+#          | |  | __ ______  _  ____ _______  _____    |
+#          | |  |/ // __ \ \/ \/ /  |  \__  \ \__  \   |
+#          | |    <\  ___/\     /|  |  // __ \_/ __ \_ |
+#          | |__|_ \\___  >\/\_/ |____/(____  (____  / |
+#          |      \/    \/                  \/     \/  |
+#          |                                           |
+#          +-------------------------------------------+
+#
+#                     Filename: qq.py
+#
+#                       Author: kewuaa
+#                      Created: 2022-04-04 21:57:28
+#                last modified: 2022-04-05 13:01:32
+#******************************************************************#
 from datetime import datetime
 from itertools import zip_longest
+from io import BytesIO
+import re
 import os
 import time
 import json
 import random
+import asyncio
 
-from playwright.async_api import async_playwright
+from PIL import Image
 
 from pet.music.musicer_model import SongInfo
 from pet.music.musicer_model import SongUrl
@@ -123,8 +139,6 @@ class Musicer(BaseMusicer):
         self.headers['cookie'] = spare_cookie
         self.headers['referer'] = 'https://y.qq.com/'
         self.js_name = self._get_random_name()
-        self._route_compile = compile(r'(\.png$)|(\.jpe?g$)')
-        self._match_compile = compile(r'ssl.+login\?')
 
     async def _get_song_info(self, song):
         time_stamp = int(time.time() * 1000)
@@ -163,37 +177,82 @@ class Musicer(BaseMusicer):
         url = 'https://dl.stream.qqmusic.qq.com/' + result_dict['data']['midurlinfo'][0]['purl']
         return SongUrl(url)
 
-    # async def _login(self, login_id, password, **kwargs):
-    #     async with async_playwright() as p:
-    #         browser = await p.chromium.launch(headless=False)
-    #         context = await browser.new_context()
-    #         await context.route(self._route_compile, lambda route: route.abort())
-    #         page = await context.new_page()
-    #         page.on('request', self._get_response)
-    #         await page.goto('https://y.qq.com/')
-    #         await page.click('//*[@id="app"]//a[@class="top_login__link"]')
-    #         login_frame = page.frame_locator('//iframe[@name="login_frame"]')
-    #         await login_frame.frame_locator('//iframe[@name="ptlogin_iframe"]').locator(
-    #             '//a[@id="switcher_plogin"]').click()
-    #         login_frame = login_frame.frame_locator('//iframe[@name="ptlogin_iframe"]')
-    #         await (id_frame := login_frame.locator('//input[@name="u"]')).click()
-    #         await id_frame.fill(login_id)
-    #         await id_frame.press("Tab")
-    #         await (password_frame := login_frame.locator('//input[@name="p"]')).fill(password)
-    #         async with page.expect_navigation():
-    #             await password_frame.press('Enter')
-    #         import asyncio
-    #         await asyncio.sleep(3)
-    #         await page.close()
-    #         await context.close()
-    #         await browser.close()
-    #         assert False, 'test'
+    async def _login(self, login_id, password, **kwargs):
+        xlogin_url = 'https://xui.ptlogin2.qq.com/cgi-bin/xlogin'
+        params = {
+                'appid': '716027609',
+                'daid': '383',
+                'style': '33',
+                'login_text': '授权并登录',
+                'hide_title_bar': '1',
+                'hide_border': '1',
+                'target': 'self',
+                's_url': 'https://graph.qq.com/oauth2.0/login_jump',
+                'pt_3rd_aid': '100497308',
+                'pt_feedback_link': 'https://support.qq.com/products/77942?customInfo=.appid100497308',
+                }
+        response = await self.session.get(xlogin_url, params=params)
+        pt_login_sig = self._get_cookie_dict(response.cookies).get('pt_login_sig')
+        img_url = 'https://ssl.ptlogin2.qq.com/ptqrshow'
+        params = {
+            'appid': '716027609',
+            'e': '2',
+            'l': 'M',
+            's': '3',
+            'd': '72',
+            'v': '4',
+            't': str(random.random()),
+            'daid': '383',
+            'pt_3rd_aid': '100497308',
+        }
+        response = await self.session.get(img_url, params=params)
+        qrsig = self._get_cookie_dict(response.cookies).get('qrsig')
+        ptqrtoken = self._decrypt(qrsig)
+        img_content = await response.read()
+        img = Image.open(BytesIO(img_content))
+        img.show()
+        login_url = 'https://ssl.ptlogin2.qq.com/ptqrlogin'
+        params = {
+                'u1': (jump_url := 'https://graph.qq.com/oauth2.0/login_jump'),
+                'ptqrtoken': ptqrtoken,
+                'ptredirect': '0',
+                'h': '1',
+                't': '1',
+                'g': '1',
+                'from_ui': '1',
+                'ptlang': '2052',
+                'action': f'0-0-{int(time.time() * 1000)}',
+                'js_ver': '20102616',
+                'js_type': '1',
+                'login_sig': pt_login_sig,
+                'pt_uistyle': '40',
+                'aid': '716027609',
+                'daid': '383',
+                'pt_3rd_aid': '100497308',
+                'has_onekey': '1',
+                }
+        while '成功' not in (
+                response_text := await (
+                    await self.session.get(login_url)).text()):
+            print(params['login_sig'])
+            print(response_text)
+            if '已经失效' in response_text:
+                raise
+            await asyncio.sleep(0.5)
+        print(response_text)
+        infos_return = {'data': response_text}
+        qq_number = re.findall(r'&uin=(.+?)&service', response.text)[0]
+        nickname = re.findall(r'\'(.*?)\'', response.text)[-1]
+        url_refresh = re.findall(r"'(https:.*?)'", response.text)[0]
+        response = await self.session.get(url_refresh)
+        print(response.cookies)
+        response = await self.session.get(jump_url)
+        print(response.cookies)
+        assert False
 
-    # def _get_response(self, request):
-    #     url = request.url
-    #     if self._match_compile.search(url) is None:
-    #         return
-    #     else:
-    #         res = request.response
-    #         print(res)
-        
+    def _decrypt(self, skey):
+        e = 0
+        for c in skey:
+            e += (e << 5) + ord(c)
+        return 2147483647 & e
+

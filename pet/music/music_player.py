@@ -120,7 +120,7 @@ class MusicApp(object):
     MAP = {
         '咪咕': 'mg',
         '网易云': 'wyy',
-        'QQ': 'qq',
+        # 'QQ': 'qq',
         '千千': 'qqjt',
         '酷我': 'kw',
         '酷狗': 'kg'
@@ -146,7 +146,7 @@ class MusicApp(object):
             'wyy': wyy.Musicer(),
             'kg': kg.Musicer(),
             'mg': mg.Musicer(),
-            'qq': qq.Musicer(),
+            # 'qq': qq.Musicer(),
             'qqjt': qqjt.Musicer(),
             'kw': kw.Musicer()
         }
