@@ -45,12 +45,7 @@ class Talker(BaseModel):
     TENCENT_SECRET_ID = 'AKIDwiDSQ8alfIejX4LL4WiiRt50dz4tQgfO'
     TENCENT_SECRET_KEY = 'TeYCZfUmoZ3FBqDKBk22lEQLyMsABwQd'
 
-    TOKEN_URL = 'https://aip.baidubce.com/oauth/2.0/token'
-    ASR_URL = 'http://vop.baidu.com/server_api'
-    TTS_URL = 'http://tsn.baidu.com/text2audio'
-    BAIDU_APP_ID = '25983647'
-    BAIDU_API_KEY = 'yxX6Lx9K32jTK8topgM4ZknG'
-    BAIDU_SECRET_KEY = '6fpT5TspIpXzfGFimHdgX3EhGP4xZuGv'
+    
     ASR_DATA = {
             'dev_pid': 1537,
             'rate': 16000,
