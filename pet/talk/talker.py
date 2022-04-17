@@ -15,7 +15,7 @@
 #
 #                       Author: kewuaa
 #                      Created: 2022-04-15 19:19:16
-#                last modified: 2022-04-17 15:47:58
+#                last modified: 2022-04-17 15:53:49
 #******************************************************************#
 from urllib.parse import quote_plus
 import os
@@ -75,9 +75,7 @@ class Talker(BaseModel):
             raise
         async with open_async(path, 'r') as f:
             settings = await f.read()
-        print(settings)
         self._settings = {line.split('=')[0]: line.split('=')[1] for line in settings.split('\n')}
-        print(self._settings)
         await self._fech_baidu_token()
         asyncio.current_task().add_done_callback(lambda _: self._init_tencent_app())
 
