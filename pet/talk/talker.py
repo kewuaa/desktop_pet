@@ -15,7 +15,7 @@
 #
 #                       Author: kewuaa
 #                      Created: 2022-04-15 19:19:16
-#                last modified: 2022-04-17 14:53:00
+#                last modified: 2022-04-17 15:47:58
 #******************************************************************#
 from urllib.parse import quote_plus
 import os
@@ -42,7 +42,9 @@ current_path, _ = os.path.split(os.path.realpath(__file__))
 class Talker(BaseModel):
     "chat robot."
 
-    
+    TOKEN_URL = 'https://aip.baidubce.com/oauth/2.0/token'
+    ASR_URL = 'http://vop.baidu.com/server_api'
+    TTS_URL = 'http://tsn.baidu.com/text2audio'
     ASR_DATA = {
             'dev_pid': 1537,
             'rate': 16000,
@@ -64,10 +66,20 @@ class Talker(BaseModel):
 
     def __init__(self) -> None:
         super().__init__(current_path)
-        self._init_tencent_app()
         self._recognizer = sr.Recognizer()
-        asyncio.create_task(self._fech_baidu_token())
+        asyncio.create_task(self._load_settings())
         self._to_delete = []
+
+    async def _load_settings(self):
+        if not os.path.exists(path := os.path.join(self.current_path, 'setting')):
+            raise
+        async with open_async(path, 'r') as f:
+            settings = await f.read()
+        print(settings)
+        self._settings = {line.split('=')[0]: line.split('=')[1] for line in settings.split('\n')}
+        print(self._settings)
+        await self._fech_baidu_token()
+        asyncio.current_task().add_done_callback(lambda _: self._init_tencent_app())
 
     def __call__(self):
         asyncio.create_task(
@@ -75,7 +87,8 @@ class Talker(BaseModel):
             )
 
     def _init_tencent_app(self):
-        cred = credential.Credential(self.TENCENT_SECRET_ID, self.TENCENT_SECRET_KEY)
+        cred = credential.Credential(
+            self._settings['TENCENT_SECRET_ID'], self._settings['TENCENT_SECRET_KEY'])
         httpProfile = HttpProfile()
         httpProfile.endpoint = 'nlp.tencentcloudapi.com'
         clientProfile = ClientProfile()
@@ -96,8 +109,8 @@ class Talker(BaseModel):
     async def _fech_baidu_token(self):
         params = {
                 'grant_type': 'client_credentials',
-                'client_id': self.BAIDU_API_KEY,
-                'client_secret': self.BAIDU_SECRET_KEY,
+                'client_id': self._settings['BAIDU_API_KEY'],
+                'client_secret': self._settings['BAIDU_SECRET_KEY'],
                 }
         resp = await self.session.get(self.TOKEN_URL, params=params)
         assert (status := resp.status) == 200, f'response: {status}'
