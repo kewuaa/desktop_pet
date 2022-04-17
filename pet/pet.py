@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: kewuaa
-# @Date:   2022-01-14 13:00:02
-# @Last Modified by:   None
-# @Last Modified time: 2022-02-17 11:47:57
 import base64
 import asyncio
 import random
@@ -29,6 +24,7 @@ from PySide2.QtGui import QCursor
 from qasync import QEventLoop
 
 from pet.hzy.aiofile import aiofile
+from pet.talk.talker import Talker
 from pet.translate.translater import TransApp
 from pet.music.music_player import MusicApp
 from pet.pictures import *
@@ -102,13 +98,14 @@ class Pet(QWidget):
         self.icon = self.actions[0][0]
 
     def setSystemMenu(self):
+        self.talker = Talker()
         self.trans_app = TransApp()
         self.trans_app.ui.setWindowFlags(Qt.Tool)
         self.music_app = MusicApp()
         self.music_app.ui.setWindowFlags(Qt.Tool)
         icon = QIcon(QPixmap.fromImage(self.icon))
         quit_action = QAction('退出', parent=self)
-        quit_action.triggered.connect(self.quit)
+        quit_action.triggered.connect(lambda: asyncio.create_task(self.quit()))
         quit_action.setIcon(icon)
         trans_action = QAction(
             '百度翻译', parent=self, triggered=self.trans_app.show)
@@ -156,6 +153,10 @@ class Pet(QWidget):
             self.current_action = random.choice(self.actions).copy()
             self.current_action.reverse()
 
+    def mouseDoubleClickEvent(self, event):
+        self.talker()
+        super().mouseDoubleClickEvent(event)
+
     def mousePressEvent(self, event):
         # print('press', event.globalPos(), self.pos())
         if event.button() == Qt.LeftButton:
@@ -177,8 +178,9 @@ class Pet(QWidget):
             self.setCursor(QCursor(Qt.ArrowCursor))
         super(Pet, self).mouseReleaseEvent(event)
 
-    def quit(self):
+    async def quit(self):
         self.tray_icon = None
+        await self.talker.close()
         QCoreApplication.instance().quit()
 
     def show(self):

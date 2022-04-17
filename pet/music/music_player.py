@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: kewuaa
-# @Date:   2022-01-21 18:36:13
-# @Last Modified by:   None
-# @Last Modified time: 2022-03-05 08:20:06
 from io import BytesIO
 from collections.abc import Coroutine
 import os
