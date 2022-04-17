@@ -42,9 +42,6 @@ current_path, _ = os.path.split(os.path.realpath(__file__))
 class Talker(BaseModel):
     "chat robot."
 
-    TENCENT_SECRET_ID = 'AKIDwiDSQ8alfIejX4LL4WiiRt50dz4tQgfO'
-    TENCENT_SECRET_KEY = 'TeYCZfUmoZ3FBqDKBk22lEQLyMsABwQd'
-
     
     ASR_DATA = {
             'dev_pid': 1537,
