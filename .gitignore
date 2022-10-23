@@ -1,5 +1,3 @@
-**/__pycache__
-**/data/
+**/__pycache__/
 **/setting
-*.js
-**/cookie
+/.venv/
