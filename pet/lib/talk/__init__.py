@@ -117,7 +117,7 @@ class Talker:
                 elif status == 3:
                     raise RuntimeError(f'fetch result error: {data["ErrorMsg"]}')
                 else:
-                    await asyncio.sleep(0.3)
+                    await asyncio.sleep(0.5)
 
         length = len(content)
         assert length
@@ -173,7 +173,7 @@ class Talker:
         winsound.PlaySound(str(path), winsound.SND_FILENAME | winsound.SND_ASYNC)
         self._to_delete.append(path)
 
-        def callback(fut: asyncio.futures.Future) -> None:
+        def callback() -> None:
             if fut.done():
                 path.unlink()
                 self._to_delete.remove(path)
