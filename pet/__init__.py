@@ -1,4 +1,3 @@
-from pathlib import Path
 import base64
 import asyncio
 import random
@@ -11,7 +10,7 @@ from PySide6.QtWidgets import QMenu
 from PySide6.QtWidgets import QSystemTrayIcon
 from PySide6.QtWidgets import QVBoxLayout
 from PySide6.QtCore import Qt
-from PySide6.QtCore import Slot
+# from PySide6.QtCore import Slot
 from PySide6.QtCore import QTimer
 from PySide6.QtCore import QCoreApplication
 from PySide6.QtGui import QGuiApplication
@@ -23,7 +22,6 @@ from PySide6.QtGui import QCursor
 # from PySide6.QtUiTools import QUiLoader
 from qasync import QEventLoop
 
-from .lib import aiofile
 from .lib.talk import Talker
 from .pictures import *
 
@@ -56,7 +54,7 @@ class Pet(QWidget):
         asyncio.get_event_loop().run_in_executor(
             None,
             self.initPet,
-        ).add_done_callback(lambda fut: self.setSystemMenu())
+        ).add_done_callback(lambda _: self.setSystemMenu())
         self.current_action = []
         self.timer = QTimer()
         self.timer.timeout.connect(self.act)
@@ -72,7 +70,8 @@ class Pet(QWidget):
         self.config = Config()
         # 依次为:子窗口化 去除界面边框 设置窗口置顶
         self.setWindowFlags(
-            Qt.SubWindow | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+            Qt.SubWindow | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint,
+        )
         # 自动填充背景，False则无背景，全白
         self.setAutoFillBackground(False)
         # 使背景透明
@@ -88,13 +87,12 @@ class Pet(QWidget):
 
     def initPet(self):
         self.pet = random.choice(list(self.config.PETS.keys()))
-        # img_file_path = os.path.join(self.config.PATH, self.pet)
-        self.actions = []
+        self.all_actions = []
         for action in self.config.PETS[self.pet]:
-            self.actions.append(
+            self.all_actions.append(
                 [self.loadImage(eval(self.pet)[int(index) - 1])
                  for index in action])
-        self.icon = self.actions[0][0]
+        self.icon = self.all_actions[0][0]
         self.setImage(self.icon)
 
     def setSystemMenu(self):
@@ -118,7 +116,7 @@ class Pet(QWidget):
             img = self.current_action.pop()
             self.setImage(img)
         else:
-            self.current_action = random.choice(self.actions).copy()
+            self.current_action = random.choice(self.all_actions).copy()
             self.current_action.reverse()
 
     def mouseDoubleClickEvent(self, event):
@@ -149,7 +147,9 @@ class Pet(QWidget):
     async def quit(self):
         self.tray_icon = None
         await self.talker.close()
-        QCoreApplication.instance().quit()
+        app = QCoreApplication.instance()
+        if app is not None:
+            app.quit()
 
     def show(self):
         self.move(self.x * random.random(), self.y * random.random())
@@ -170,6 +170,6 @@ def run():
     loop = QEventLoop(application)
     asyncio.set_event_loop(loop)
     with loop:
-        pet = Pet()
+        Pet()
         loop.run_forever()
 
