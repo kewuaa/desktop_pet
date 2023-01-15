@@ -8,9 +8,6 @@ import asyncio
 import winsound
 
 from tencentcloud.common import credential
-# from tencentcloud.common.profile.client_profile import ClientProfile
-# from tencentcloud.common.profile.http_profile import HttpProfile
-# from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentCloudSDKException
 from tencentcloud.nlp.v20190408 import nlp_client
 from tencentcloud.nlp.v20190408 import models as nlp_models
 from tencentcloud.asr.v20190614 import asr_client
@@ -42,7 +39,9 @@ class Talker:
             asyncio.futures._chain_future(task, self.__sess)
 
         self.__headers = {
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36 Edg/106.0.1370.47',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebK'
+            'it/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36 Edg/'
+            '106.0.1370.47',
         }
         loop.call_soon_threadsafe(init_sess)
         loop.create_task(self.__load_settings())
@@ -78,9 +77,15 @@ class Talker:
             self._settings['TENCENT_SECRET_ID'],
             self._settings['TENCENT_SECRET_KEY'],
         )
-        self._tencent_nlp_client = AIOWrapper(nlp_client.NlpClient(cred, 'ap-guangzhou'))
-        self._tencent_asr_client = AIOWrapper(asr_client.AsrClient(cred, 'ap-chengdu'))
-        self._tencent_tts_client = AIOWrapper(tts_client.TtsClient(cred, "ap-chengdu"))
+        self._tencent_nlp_client = AIOWrapper(
+            nlp_client.NlpClient(cred, 'ap-guangzhou'),
+        )
+        self._tencent_asr_client = AIOWrapper(
+            asr_client.AsrClient(cred, 'ap-chengdu'),
+        )
+        self._tencent_tts_client = AIOWrapper(
+            tts_client.TtsClient(cred, "ap-chengdu"),
+        )
 
     async def _get_response(self, msg: str) -> str:
         req = nlp_models.ChatBotRequest()
@@ -194,4 +199,3 @@ class Talker:
         sess: ClientSession = await self.__sess
         if not sess.closed:
             await sess.close()
-
