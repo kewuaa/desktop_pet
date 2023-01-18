@@ -17,8 +17,8 @@ from tencentcloud.tts.v20190823 import models as tts_models
 from aiohttp import ClientSession
 import speech_recognition as sr
 
-from ..aiofile import AIOWrapper
-from ..aiofile import async_open
+from ... import setting
+from ..alib import aiofile
 
 
 current_path = Path(__file__).parent
@@ -29,9 +29,11 @@ class Talker:
 
     def __init__(self) -> None:
         self.__loop = loop = asyncio.get_event_loop()
+        setting.load(self.__load_settings)
         self._recognizer = sr.Recognizer()
         self._to_delete = []
         self.__index = self.__increase_i()
+        self.__enabled = False
         self.__sess = loop.create_future()
 
         def init_sess() -> None:
@@ -44,7 +46,6 @@ class Talker:
             '106.0.1370.47',
         }
         loop.call_soon_threadsafe(init_sess)
-        loop.create_task(self.__load_settings())
 
     async def __init_sess(self) -> ClientSession:
         kwargs = {
@@ -53,37 +54,30 @@ class Talker:
         }
         return ClientSession(**kwargs)
 
-    async def __load_settings(self):
-        path = current_path / 'setting'
-        if not path.exists():
-            print(f'setting file: "{path}" not found')
-            return
-        async with async_open(path, 'r') as f:
-            settings = await f.read()
-        self._settings = {
-            line.split('=')[0]: line.split('=')[1]
-            for line in settings.split('\n')
-        }
-        self._init_tencent_app()
+    def __load_settings(self, setting: dict):
+        TENCENT_SECRET_ID = setting.get('TENCENT_SECRET_ID')
+        TENCENT_SECRET_KEY = setting.get('TENCENT_SECRET_KEY')
+        if TENCENT_SECRET_ID is None or TENCENT_SECRET_KEY is None:
+            raise RuntimeError('TENCENT_SECRET_ID or TECENT_SECRET_KEY '
+                               'not founded in setting')
+        self._init_tencent_app(TENCENT_SECRET_ID, TENCENT_SECRET_KEY)
+        self.__enabled = True
 
     def __call__(self):
-        if not hasattr(self, '_settings'):
-            print('no settings have been loaded')
-            return
-        self.__loop.create_task(self._run())
+        if self.__enabled:
+            self.__loop.create_task(self._run())
+        else:
+            print('talker not enabled')
 
-    def _init_tencent_app(self):
-        cred = credential.Credential(
-            self._settings['TENCENT_SECRET_ID'],
-            self._settings['TENCENT_SECRET_KEY'],
-        )
-        self._tencent_nlp_client = AIOWrapper(
+    def _init_tencent_app(self, id_: str, key: str):
+        cred = credential.Credential(id_, key)
+        self._tencent_nlp_client = aiofile.AIOWrapper(
             nlp_client.NlpClient(cred, 'ap-guangzhou'),
         )
-        self._tencent_asr_client = AIOWrapper(
+        self._tencent_asr_client = aiofile.AIOWrapper(
             asr_client.AsrClient(cred, 'ap-chengdu'),
         )
-        self._tencent_tts_client = AIOWrapper(
+        self._tencent_tts_client = aiofile.AIOWrapper(
             tts_client.TtsClient(cred, "ap-chengdu"),
         )
 
@@ -119,7 +113,9 @@ class Talker:
                     result = self.result_compile.findall(result)[0]
                     return result.strip()
                 elif status == 3:
-                    raise RuntimeError(f'fetch result error: {data["ErrorMsg"]}')
+                    raise RuntimeError(
+                        f'fetch result error: {data["ErrorMsg"]}',
+                    )
                 else:
                     await asyncio.sleep(0.5)
 
@@ -172,9 +168,12 @@ class Talker:
         content = response_dict['Audio'].encode()
         content = base64.b64decode(content)
         path = current_path / f'temp{next(self.__index)}.wav'
-        async with async_open(path, 'wb') as f:
+        async with aiofile.async_open(path, 'wb') as f:
             await f.write(content)
-        winsound.PlaySound(str(path), winsound.SND_FILENAME | winsound.SND_ASYNC)
+        winsound.PlaySound(
+            str(path),
+            winsound.SND_FILENAME | winsound.SND_ASYNC,
+        )
         self._to_delete.append(path)
 
         def callback() -> None:
@@ -183,7 +182,7 @@ class Talker:
         self.__loop.call_later(60, callback)
 
     async def _run(self):
-        content = await self.__loop.run_in_executor(None, self._record)
+        content = await aiofile.AWrapper(self._record)()
         # async with async_open(f'{self.current_path}/result.wav', 'rb') as f:
         #     content = await f.read()
         msg = await self._get_speech_recognition(content)

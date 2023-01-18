@@ -21,7 +21,7 @@ from PySide6.QtGui import QCursor
 # from PySide6.QtUiTools import QUiLoader
 from qasync import QEventLoop
 
-# from .lib.talk import Talker
+from .lib.talk import Talker
 from . import image
 
 
@@ -30,7 +30,6 @@ class Pet(QWidget):
         super(Pet, self).__init__(parent)
         self.initUi()
         image.set_after_load(self.setSystemMenu)
-        # self.setSystemMenu()
         self.timer = QTimer()
         self.timer.timeout.connect(partial(image.set, self.image))
         self.timer.start(500)
@@ -59,7 +58,7 @@ class Pet(QWidget):
         self.show()
 
     def setSystemMenu(self, all_actions):
-        # self.talker = Talker()
+        self.talker = Talker()
         icon = all_actions[0][0]
         icon = QIcon(QPixmap.fromImage(icon))
         quit_action = QAction('退出', parent=self)
@@ -73,7 +72,7 @@ class Pet(QWidget):
         self.tray_icon.show()
 
     def mouseDoubleClickEvent(self, event):
-        # self.talker()
+        self.talker()
         super().mouseDoubleClickEvent(event)
 
     def mousePressEvent(self, event):
@@ -99,7 +98,7 @@ class Pet(QWidget):
 
     async def quit(self):
         self.tray_icon = None
-        # await self.talker.close()
+        await self.talker.close()
         app = QCoreApplication.instance()
         if app is not None:
             app.quit()
