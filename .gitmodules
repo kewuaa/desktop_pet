@@ -1,0 +1,3 @@
+[submodule "pet/lib/alib"]
+	path = pet/lib/alib
+	url = https://github.com/kewuaa/async_lib.git

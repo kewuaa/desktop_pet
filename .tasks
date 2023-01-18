@@ -1,6 +1,6 @@
 # vim: set fenc=utf-8 ft=dosini:
 # see: https://github.com/skywind3000/asynctasks.vim/wiki/Task-Config
 [file-run]
-command:python=python.exe <root>/main.py
+command:python=python -m pet
 cwd=<root>
 
