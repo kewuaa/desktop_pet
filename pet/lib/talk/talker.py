@@ -16,9 +16,9 @@ from tencentcloud.tts.v20190823 import tts_client
 from tencentcloud.tts.v20190823 import models as tts_models
 from aiohttp import ClientSession
 import speech_recognition as sr
+import aiofiles
 
 from ... import setting
-from ..alib import aiofile
 
 
 current_path = Path(__file__).parent
@@ -71,15 +71,9 @@ class Talker:
 
     def _init_tencent_app(self, id_: str, key: str):
         cred = credential.Credential(id_, key)
-        self._tencent_nlp_client = aiofile.AIOWrapper(
-            nlp_client.NlpClient(cred, 'ap-guangzhou'),
-        )
-        self._tencent_asr_client = aiofile.AIOWrapper(
-            asr_client.AsrClient(cred, 'ap-chengdu'),
-        )
-        self._tencent_tts_client = aiofile.AIOWrapper(
-            tts_client.TtsClient(cred, "ap-chengdu"),
-        )
+        self._tencent_nlp_client = nlp_client.NlpClient(cred, 'ap-guangzhou')
+        self._tencent_asr_client = asr_client.AsrClient(cred, 'ap-chengdu')
+        self._tencent_tts_client = tts_client.TtsClient(cred, "ap-chengdu")
 
     async def _get_response(self, msg: str) -> str:
         req = nlp_models.ChatBotRequest()
@@ -87,7 +81,11 @@ class Talker:
             'Query': msg,
         }
         req.from_json_string(json.dumps(params))
-        resp = await self._tencent_nlp_client.ChatBot(req)
+        resp = await self.__loop.run_in_executor(
+            None,
+            self._tencent_nlp_client.ChatBot,
+            req
+        )
         response_dict = json.loads(resp.to_json_string())
         resp = response_dict.get('Reply')
         if resp is None:
@@ -104,7 +102,11 @@ class Talker:
                     "TaskId": task_id,
                 }
                 req.from_json_string(json.dumps(params))
-                resp = await self._tencent_asr_client.DescribeTaskStatus(req)
+                resp = await self.__loop.run_in_executor(
+                    None,
+                    self._tencent_asr_client.DescribeTaskStatus,
+                    req
+                )
                 response_dict = json.loads(resp.to_json_string())
                 data = response_dict['Data']
                 status = data['Status']
@@ -134,7 +136,11 @@ class Talker:
         req.from_json_string(json.dumps(params))
 
         # 返回的resp是一个CreateRecTaskResponse的实例，与请求对象对应
-        resp = await self._tencent_asr_client.CreateRecTask(req)
+        resp = await self.__loop.run_in_executor(
+            None,
+            self._tencent_asr_client.CreateRecTask,
+            req
+        )
         # 输出json格式的字符串回包
         response_dict = json.loads(resp.to_json_string())
         task_id = response_dict['Data']['TaskId']
@@ -163,12 +169,16 @@ class Talker:
             "Codec": "wav"
         }
         req.from_json_string(json.dumps(params))
-        resp = await self._tencent_tts_client.TextToVoice(req)
+        resp = await self.__loop.run_in_executor(
+            None,
+            self._tencent_tts_client.TextToVoice,
+            req
+        )
         response_dict = json.loads(resp.to_json_string())
         content = response_dict['Audio'].encode()
         content = base64.b64decode(content)
         path = current_path / f'temp{next(self.__index)}.wav'
-        async with aiofile.async_open(path, 'wb') as f:
+        async with aiofiles.open(path, 'wb') as f:
             await f.write(content)
         winsound.PlaySound(
             str(path),
@@ -182,7 +192,7 @@ class Talker:
         self.__loop.call_later(60, callback)
 
     async def _run(self):
-        content = await aiofile.AWrapper(self._record)()
+        content = await self.__loop.run_in_executor(None, self._record)
         # async with async_open(f'{self.current_path}/result.wav', 'rb') as f:
         #     content = await f.read()
         msg = await self._get_speech_recognition(content)

@@ -4,8 +4,9 @@ from PySide6.QtWidgets import QLabel
 from pathlib import Path
 from random import choice
 import asyncio
+import json
 
-from ..lib.alib import aiofile
+import aiofiles
 path = Path(__file__).parent
 all_actions = None
 current_action = None
@@ -13,13 +14,13 @@ after_load = None
 
 
 async def load_pet(file: Path) -> dict:
-    async with aiofile.async_open(file, 'r') as f:
+    async with aiofiles.open(file, 'r') as f:
         json_str = await f.read()
-    return await aiofile.ajson.loads(json_str)
+    return json.loads(json_str)
 
 
 async def load_image(image: Path) -> QImage:
-    async with aiofile.async_open(image, 'rb') as f:
+    async with aiofiles.open(image, 'rb') as f:
         data = await f.read()
         img = QImage()
         img.loadFromData(data)
