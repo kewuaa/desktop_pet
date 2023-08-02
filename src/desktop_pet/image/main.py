@@ -1,12 +1,12 @@
-from PySide6.QtGui import QImage
-from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QLabel
-from pathlib import Path
-from random import choice
 import asyncio
 import json
+from pathlib import Path
+from random import choice
 
 import aiofiles
+from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtWidgets import QLabel
+
 path = Path(__file__).parent
 all_actions = None
 current_action = None

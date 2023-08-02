@@ -1,4 +1,4 @@
 [project-run]
-command:python=<root>/.venv/Scripts/python -m pet
-cwd=<root>
+command:python=<root>/.venv/Scripts/python -m desktop_pet
+cwd=<root>/src
 

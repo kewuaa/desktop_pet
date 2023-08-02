@@ -1,0 +1,25 @@
+[project]
+name = "desktop_pet"
+version = "0.1.0"
+description = "desktop pet"
+authors = [
+    {name = "kewuaa"}
+]
+dependencies = [
+    "PySide6",
+    "qasync",
+    "aiohttp",
+    "aiofiles",
+]
+urls = { GitHub = "https://github.com/kewuaa/desktop_pet" }
+readme = "README.md"
+
+[tool.setuptools]
+packages = {find = {where = ["./src"]}}
+package-dir = {"" = "./src"}
+package-data = {"desktop_pet.image" = ["*.jpg", "*.json"]}
+
+[tool.pyright]
+venv = ".venv"
+venvPath = "."
+include = ["./src"]

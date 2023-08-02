@@ -1,27 +1,20 @@
-from functools import partial
 import asyncio
 import random
 import sys
+from functools import partial
 
-from PySide6.QtWidgets import QApplication
-from PySide6.QtWidgets import QWidget
-from PySide6.QtWidgets import QLabel
-from PySide6.QtWidgets import QMenu
-from PySide6.QtWidgets import QSystemTrayIcon
-from PySide6.QtWidgets import QVBoxLayout
-from PySide6.QtCore import Qt
-# from PySide6.QtCore import Slot
-from PySide6.QtCore import QTimer
-from PySide6.QtCore import QCoreApplication
-from PySide6.QtGui import QGuiApplication
-from PySide6.QtGui import QAction
-from PySide6.QtGui import QPixmap
-from PySide6.QtGui import QIcon
-from PySide6.QtGui import QCursor
-# from PySide6.QtUiTools import QUiLoader
+from PySide6.QtCore import QCoreApplication, Qt, QTimer
+from PySide6.QtGui import QAction, QCursor, QGuiApplication, QIcon, QPixmap
+from PySide6.QtWidgets import (
+    QApplication,
+    QLabel,
+    QMenu,
+    QSystemTrayIcon,
+    QVBoxLayout,
+    QWidget,
+)
 from qasync import QEventLoop
 
-from .lib.talk import Talker
 from . import image
 
 
@@ -58,7 +51,6 @@ class Pet(QWidget):
         self.show()
 
     def setSystemMenu(self, all_actions):
-        self.talker = Talker()
         icon = all_actions[0][0]
         icon = QIcon(QPixmap.fromImage(icon))
         quit_action = QAction('退出', parent=self)
@@ -70,10 +62,6 @@ class Pet(QWidget):
         self.tray_icon.setContextMenu(menu)
         self.tray_icon.setIcon(icon)
         self.tray_icon.show()
-
-    def mouseDoubleClickEvent(self, event):
-        self.talker()
-        super().mouseDoubleClickEvent(event)
 
     def mousePressEvent(self, event):
         # print('press', event.globalPos(), self.pos())
@@ -98,7 +86,6 @@ class Pet(QWidget):
 
     async def quit(self):
         self.tray_icon = None
-        await self.talker.close()
         app = QCoreApplication.instance()
         if app is not None:
             app.quit()
@@ -112,6 +99,8 @@ def run():
     application = QApplication(sys.argv)
     loop = QEventLoop(application)
     asyncio.set_event_loop(loop)
+    Pet()
     with loop:
-        Pet()
         loop.run_forever()
+        loop.run_until_complete(loop.shutdown_asyncgens())
+        loop.run_until_complete(loop.shutdown_default_executor())
