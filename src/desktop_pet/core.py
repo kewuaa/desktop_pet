@@ -102,5 +102,3 @@ def run():
     Pet()
     with loop:
         loop.run_forever()
-        loop.run_until_complete(loop.shutdown_asyncgens())
-        loop.run_until_complete(loop.shutdown_default_executor())
