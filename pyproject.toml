@@ -13,6 +13,7 @@ dependencies = [
 ]
 urls = { GitHub = "https://github.com/kewuaa/desktop_pet" }
 readme = "README.md"
+scripts = { desktop_pet = "desktop_pet:run" }
 
 [tool.setuptools]
 packages = {find = {where = ["./src"]}}
