@@ -18,7 +18,7 @@ scripts = { desktop_pet = "desktop_pet:run" }
 [tool.setuptools]
 packages = {find = {where = ["./src"]}}
 package-dir = {"" = "./src"}
-package-data = {"desktop_pet.image" = ["*.jpg", "*.json"]}
+package-data = {"desktop_pet.image" = ["pet*/*.jpg", "pet*/*.json"]}
 
 [tool.pyright]
 venv = ".venv"
