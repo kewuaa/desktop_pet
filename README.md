@@ -1,7 +1,7 @@
 # desktop_pet
 桌面宠物
 
-# usage
+# install
 
 ```
 git clone https://github.com/kewuaa/desktop_pet
