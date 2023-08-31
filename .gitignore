@@ -2,5 +2,8 @@
 build/
 dist/
 images/
+zig-cache/
+zig-out/
 *.egg-info/
 **/__pycache__/
+*.zig
