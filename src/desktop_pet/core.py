@@ -4,7 +4,7 @@ import sys
 from functools import partial
 
 from PySide6.QtCore import QCoreApplication, Qt, QTimer
-from PySide6.QtGui import QAction, QCursor, QGuiApplication, QIcon, QPixmap
+from PySide6.QtGui import QAction, QCursor, QGuiApplication, QIcon, QImage, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QLabel,
@@ -22,7 +22,8 @@ class Pet(QWidget):
     def __init__(self, parent=None):
         super(Pet, self).__init__(parent)
         self.initUi()
-        image.set_after_load(self.setSystemMenu)
+        self.setSystemMenu(image.actions[0][0])
+        # image.set_after_load(self.setSystemMenu)
         self.timer = QTimer()
         self.timer.timeout.connect(partial(image.set, self.image))
         self.timer.start(500)
@@ -50,9 +51,8 @@ class Pet(QWidget):
         vbox.addWidget(self.image)
         self.show()
 
-    def setSystemMenu(self, all_actions):
-        icon = all_actions[0][0]
-        icon = QIcon(QPixmap.fromImage(icon))
+    def setSystemMenu(self, img: QImage):
+        icon = QIcon(QPixmap.fromImage(img))
         quit_action = QAction('退出', parent=self)
         quit_action.triggered.connect(lambda: asyncio.create_task(self.quit()))
         quit_action.setIcon(icon)

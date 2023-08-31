@@ -1,3 +1,10 @@
+[+]
+rcc=<root>/.venv/Scripts/pyside6-rcc
+
+[rcc]
+command=$(+rcc) ./src/desktop_pet/image/pet_1.qrc -o ./src/desktop_pet/image/pet_1_rc.py && $(+rcc) ./src/desktop_pet/image/pet_2.qrc -o ./src/desktop_pet/image/pet_2_rc.py && $(+rcc) ./src/desktop_pet/image/pet_3.qrc -o ./src/desktop_pet/image/pet_3_rc.py && $(+rcc) ./src/desktop_pet/image/pet_4.qrc -o ./src/desktop_pet/image/pet_4_rc.py
+cwd=<root>
+
 [project-run]
 command:python=<root>/.venv/Scripts/python -m desktop_pet
 cwd=<root>/src
