@@ -4,11 +4,12 @@ except ImportError:
     import tomli as tomllib
 from pathlib import Path
 from random import choice
+from typing import List
 
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QLabel
 
-ActionList = list[list[QImage]]
+ActionList = List[List[QImage]]
 
 def random_init_action() -> ActionList:
     def to_img(ii: str) -> QImage:
@@ -24,7 +25,7 @@ def random_init_action() -> ActionList:
     ]
 
 actions: ActionList = random_init_action()
-current_action: list[QImage] = []
+current_action: List[QImage] = []
 
 
 def set(label: QLabel) -> None:
