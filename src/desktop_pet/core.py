@@ -3,7 +3,7 @@ import random
 import sys
 from functools import partial
 
-from PySide6.QtCore import QCoreApplication, Qt, QTimer
+from PySide6.QtCore import QCoreApplication, QPoint, Qt, QTimer
 from PySide6.QtGui import QAction, QCursor, QGuiApplication, QIcon, QImage, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -28,21 +28,21 @@ class Pet(QWidget):
         self.timer.timeout.connect(partial(image.set, self.image))
         self.timer.start(500)
         self.follow_mouse = False
-        self.mouse_press_pos = None
+        self.mouse_press_pos = QPoint(0, 0)
 
     def initUi(self):
         screen = QGuiApplication.primaryScreen().size()
-        self.x = screen.width() - self.width()
-        self.y = screen.height() - self.height()
+        self.pos_x = screen.width() - self.width()
+        self.pos_y = screen.height() - self.height()
         # 加载配置
         # 依次为:子窗口化 去除界面边框 设置窗口置顶
         self.setWindowFlags(
-            Qt.SubWindow | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint,
+            Qt.WindowType.SubWindow | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint,
         )
         # 自动填充背景，False则无背景，全白
         self.setAutoFillBackground(False)
         # 使背景透明
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         # 重新渲染
         self.repaint()
         vbox = QVBoxLayout()
@@ -65,15 +65,15 @@ class Pet(QWidget):
 
     def mousePressEvent(self, event):
         # print('press', event.globalPos(), self.pos())
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.follow_mouse = True
             self.mouse_press_pos = self.pos() - event.globalPos()
-            self.setCursor(QCursor(Qt.OpenHandCursor))
+            self.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
         super(Pet, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         # print('move', event.globalPos(), self.pos())
-        if Qt.LeftButton and self.follow_mouse:
+        if Qt.MouseButton.LeftButton and self.follow_mouse:
             self.move(event.globalPos() + self.mouse_press_pos)
         super(Pet, self).mouseMoveEvent(event)
 
@@ -81,7 +81,7 @@ class Pet(QWidget):
         # print('release', event.globalPos(), self.pos())
         if self.follow_mouse:
             self.follow_mouse = False
-            self.setCursor(QCursor(Qt.ArrowCursor))
+            self.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
         super(Pet, self).mouseReleaseEvent(event)
 
     async def quit(self):
@@ -91,7 +91,10 @@ class Pet(QWidget):
             app.quit()
 
     def show(self):
-        self.move(self.x * random.random(), self.y * random.random())
+        self.move(
+            int(self.pos_x * random.random()),
+            int(self.pos_y * random.random())
+        )
         super().show()
 
 
