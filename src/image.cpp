@@ -31,8 +31,10 @@ void load() {
     pets.reserve(4);
     for (auto& it: std::filesystem::directory_iterator(path)) {
         if (it.status().type() == std::filesystem::file_type::directory) {
-            count += 1;
-            pets.push_back(it.path().filename().string());
+            if (std::filesystem::exists(it.path().string() + "/pet.json")) {
+                count += 1;
+                pets.push_back(it.path().filename().string());
+            }
         }
     }
 
