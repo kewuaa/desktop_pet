@@ -1,5 +1,8 @@
 #include <iostream>
 #include <random>
+#ifndef _DEBUG
+#include <windows.h>
+#endif
 
 #include "QtCore/QPoint"
 #include "QtCore/QSize"
@@ -120,6 +123,12 @@ class Pet: QWidget {
 
 
 int main(int argc, char** argv) {
+#ifndef _DEBUG
+    const auto hwnd = FindWindowA("ConsoleWindowClass", NULL);
+    if (hwnd) {
+        ShowWindow(hwnd, SW_HIDE);
+    }
+#endif
     QApplication app(argc, argv);
     Pet pet;
     app.exec();
