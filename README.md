@@ -1,14 +1,13 @@
 # desktop_pet
-桌面宠物
+桌面宠物（c++ 版）
 
 # install
 
 ```
 git clone https://github.com/kewuaa/desktop_pet
 cd desktop_pet
-pip install .
+zig build -Doptimize=ReleaseSafe
 ```
 
-or `pip install git+https://github.com/kewuaa/desktop_pet`
-
-then run desktop_pet
+then you could find the executable in zig-out/bin  
+(**note**: Qt5Widget, Qt5Core, Qt5Gui dynamic library is needed).
