@@ -1,0 +1,6 @@
+-I./include
+-ID:/Softwares/Program_Files/QT/QT-5.14.2/5.14.2/mingw73_64/include
+-LD:/Softwares/Program_Files/QT/QT-5.14.2/5.14.2/mingw73_64/lib
+-lQt5Widgets
+-lQt5Core
+-lQt5Gui

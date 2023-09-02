@@ -5,5 +5,3 @@ zig-cache/
 zig-out/
 *.egg-info/
 **/__pycache__/
-*.zig
-compile_flags.txt
